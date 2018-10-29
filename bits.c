@@ -298,9 +298,9 @@ int bitCount(int x)
  *   Max ops: 16
  *   Rating: 3
  */
-int bitMask(int highbit, int lowbit)  // 9 op
+int bitMask(int highbit, int lowbit)  // 7 op
 {
-    int high_mask = ~((1 << lowbit) + ~0);
+    int high_mask = ~0 << lowbit;
     int low_mask = ((1 << highbit << 1) + ~0);
     return high_mask & low_mask;
 }
@@ -467,7 +467,7 @@ int distinctNegation(int x)  // 5 op
 
 int distinctNegation_alternative(int x)  // 5 op
 {
-    // Same with bang()
+    // See bang()
     return ((x ^ (~x + 1)) >> 31) & 1;
 }
 
@@ -830,8 +830,8 @@ int isAsciiDigit(int x)  // 8 op
     // x - 0x30 >= 0 && x - 0x39 <= 0
     // !(x - 0x30 < 0 || x - 0x39 > 0)
     // !(x - 0x30 < 0 || x - 0x3A >= 0)
-    // !(((x - 0x30) >> 31) | !((x - 0x3A) >> 31));
-    // (!((x - 0x30) >> 31)) & ((x - 0x3A) >> 31);
+    // !(((x - 0x30) > 31) | !((x - 0x3A) > 31));
+    // (!((x - 0x30) > 31)) & ((x - 0x3A) > 31);
     return (!((x + ~0x2F) >> 31)) & ((x + ~0x39) >> 31);
 }
 
@@ -1090,18 +1090,18 @@ int logicalNeg(int x)  // 6 op
  *   Max ops: 20
  *   Rating: 3
  */
-int logicalShift(int x, int n)  // 9 op
+int logicalShift(int x, int n)  // 6 op
 {
-    int sign = (x >> 31) & 1;
-    // return ((x ^ (sign << 31)) >> n) | (sign << (31 - n));
-    return ((x ^ (sign << 31)) >> n) | (sign << (32 + ~n));
+    int mask = ~(1 << 31 >> n << 1);
+    return (x >> n) & mask;
 }
 
-int logicalShift_10(int x, int n)  // 10 op
+int logicalShift_9(int x, int n)  // 9 op
 {
-    int sign = x & (1 << 31);
-    // return ((x ^ sign) >> n) | ((sign >> 31) & (1 << (31 - n)));
-    return ((x ^ sign) >> n) | ((sign >> 31) & (1 << (32 + ~n)));
+    int sign = (x >> 31) & 1;
+    // Clear sign bit to 0 and set it after shift
+    // return ((x ^ (sign << 31)) >> n) | (sign << (31 - n));
+    return ((x ^ (sign << 31)) >> n) | (sign << (32 + ~n));
 }
 
 /*
@@ -1194,8 +1194,8 @@ int oddBits(void)  // 4 op
 int remainderPower2(int x, int n)  // 16 op, faster
 {
     int x_sign = x >> 31;
-    int remainder_mask = (1 << n) + ~0;
     int x_abs = (x ^ x_sign) + (x_sign & 1);
+    int remainder_mask = (1 << n) + ~0;
     int remainder_abs = x_abs & remainder_mask;
     int remainder_sign = (x & (!!remainder_abs << 31)) >> 31;
     return (remainder_abs ^ remainder_sign) + (remainder_sign & 1);
