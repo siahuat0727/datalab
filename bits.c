@@ -662,7 +662,7 @@ int floatIsLess(unsigned uf, unsigned ug)  // timeout ?
 
 int floatIsLess_hack(unsigned uf, unsigned ug)  // Even this is timeout
 {
-    return *(float*)&uf < *(float*)&ug;
+    return *(float *) &uf < *(float *) &ug;
 }
 
 /*
