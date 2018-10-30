@@ -622,14 +622,15 @@ unsigned floatInt2Float(int x)
 int floatIsEqual(unsigned uf, unsigned ug)  // timeout ?
 {
     return 42;
-    // return (uf is not NaN && ug is not NaN && (uf equals to ug || both are zero))
+    // return (uf is not NaN && ug is not NaN && (uf equals to ug || both are
+    // zero))
     return (uf & 0x7fffffff) <= 0x7f800000 && (ug & 0x7fffffff) <= 0x7f800000 &&
-        (uf == ug || !((uf | ug) << 1));
+           (uf == ug || !((uf | ug) << 1));
 }
 
 int floatIsEqual_hack(unsigned uf, unsigned ug)  // Even this is timeout!
 {
-    return *(float*)&uf == *(float*)&ug;
+    return *(float *) &uf == *(float *) &ug;
 }
 
 /*
@@ -643,9 +644,25 @@ int floatIsEqual_hack(unsigned uf, unsigned ug)  // Even this is timeout!
  *   Max ops: 30
  *   Rating: 3
  */
-int floatIsLess(unsigned uf, unsigned ug)
+int floatIsLess(unsigned uf, unsigned ug)  // timeout ?
 {
-    return 42;
+    // Check if uf is NaN or ug is NaN or both are zero
+    if ((uf & 0x7FFFFFFF) > 0x7f800000 || (ug & 0x7FFFFFFF) > 0x7f800000 ||
+        !((uf | ug) << 1))
+        return 0;
+    int uf_sign = uf >> 31;
+    int ug_sign = ug >> 31;
+    // (uf is neg and ug is pos || (both are neg && uf < ug) ||
+    // (both are pos && uf > ug))
+    if (uf_sign > ug_sign ||
+        (ug_sign == uf_sign && ((ug_sign && ug < uf) || (!ug_sign && uf < ug))))
+        return 1;
+    return 0;
+}
+
+int floatIsLess_hack(unsigned uf, unsigned ug)  // Even this is timeout
+{
+    return *(float*)&uf < *(float*)&ug;
 }
 
 /*
@@ -659,9 +676,10 @@ int floatIsLess(unsigned uf, unsigned ug)
  *   Max ops: 10
  *   Rating: 2
  */
-unsigned floatNegate(unsigned uf)
+unsigned floatNegate(unsigned uf)  // 5? op
 {
     int is_NaN = (uf & 0x7FFFFFFF) > 0x7f800000;
+    // Toggle sign bit if uf is not NaN
     return is_NaN ? uf : uf ^ (1 << 31);
 }
 
@@ -681,6 +699,7 @@ unsigned floatNegate(unsigned uf)
  */
 unsigned floatPower2(int x)
 {
+    // int is_NaN = (x & 0x7FFFFFFF) > 0x7f800000;
     return 42;
 }
 
@@ -695,9 +714,19 @@ unsigned floatPower2(int x)
  *   Max ops: 30
  *   Rating: 4
  */
-unsigned floatScale1d2(unsigned uf)
+unsigned floatScale1d2(unsigned uf)  // 15? op
 {
-    return 42;
+    int sign = uf & 0x80000000;
+    int exponent = uf & 0x7F800000;
+    if (exponent <= 0x800000) {
+        // Round-to-even
+        uf = uf + ((uf & 0x3) == 0x3);
+        int uf_abs = uf ^ sign;
+        uf = sign | (uf_abs >> 1);
+    } else if (exponent < 0x7F800000) {
+        uf = (uf & 0x807FFFFF) | (exponent - 0x800000);
+    }
+    return uf;
 }
 
 /*
@@ -711,9 +740,17 @@ unsigned floatScale1d2(unsigned uf)
  *   Max ops: 30
  *   Rating: 4
  */
-unsigned floatScale2(unsigned uf)
+unsigned floatScale2(unsigned uf)  // 11? op
 {
-    return 42;
+    int sign = uf & 0x80000000;
+    int exponent = uf & 0x7F800000;
+    int exponent_is_zero = !exponent;
+    if (exponent_is_zero) {
+        uf = sign | (uf << 1);
+    } else if (exponent != 0x7F800000) {
+        uf = (uf & 0x807FFFFF) | (exponent + 0x800000);
+    }
+    return uf;
 }
 
 /*
@@ -727,9 +764,26 @@ unsigned floatScale2(unsigned uf)
  *   Max ops: 35
  *   Rating: 4
  */
-unsigned floatScale64(unsigned uf)
+unsigned floatScale64(unsigned uf)  // 16? op
 {
-    return 42;
+    int sign = uf & 0x80000000;
+    int num_loop = 6;
+    while (num_loop--) {
+        int exponent = uf & 0x7F800000;
+        int exponent_is_zero = !exponent;
+        if (exponent_is_zero) {
+            uf = sign | (uf << 1);
+        } else if (exponent != 0x7F800000) {
+            exponent = exponent + 0x800000;
+            // Check if grater than INF
+            if (exponent == 0x7F800000)
+                // Set to +- INF
+                uf = sign | exponent;
+            else
+                uf = (uf & 0x807FFFFF) | exponent;
+        }
+    }
+    return uf;
 }
 
 /*
@@ -741,9 +795,31 @@ unsigned floatScale64(unsigned uf)
  *   Max ops: 30
  *   Rating: 4
  */
-unsigned floatUnsigned2Float(unsigned u)
+unsigned floatUnsigned2Float(unsigned u)  // 26? op
 {
-    return 42;
+    if (u) {
+        int greatest_bit_pos = 31;
+        while (!((1 << greatest_bit_pos) & u)) {
+            greatest_bit_pos--;
+        }
+        int diff = 23 - greatest_bit_pos;
+        int exponent = 150 - diff;  // 127 (bias) + 23 - diff
+        if (diff >= 0) {
+            u <<= diff;
+        } else {
+            diff = -diff;
+            // GRS action: https://stackoverflow.com/questions/8981913
+            int G = u & (1 << diff);
+            int R = u & (1 << (diff - 1));
+            int S = u << (33 - diff);
+            u >>= diff;
+            // ( Obvious || Round-to-even )
+            u += R && (S || G);
+        }
+        // | sign=0 | exponent | fraction |
+        u = (exponent << 23) | (u & 0x7FFFFF);
+    }
+    return u;
 }
 
 /*
