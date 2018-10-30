@@ -14,7 +14,6 @@
  * FIXME: not 64-bit safe. Always compile with gcc -m32 option.
  */
 
-#include "btest.h"
 #include <limits.h>
 #include <math.h>
 #include <setjmp.h>
@@ -24,6 +23,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include "btest.h"
 
 /* Not declared in some stdlib.h files, so define here */
 float strtof(const char *nptr, char **endptr);
