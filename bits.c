@@ -300,6 +300,8 @@ int bitCount(int x)
  */
 int bitMask(int highbit, int lowbit)  // 7 op
 {
+    // Idea from < aben20807 >:
+    // Use '~0 << lowbit' instead of '~((1 << lowbit) + ~0)'
     int high_mask = ~0 << lowbit;
     int low_mask = ((1 << highbit << 1) + ~0);
     return high_mask & low_mask;
@@ -315,7 +317,8 @@ int bitMask(int highbit, int lowbit)  // 7 op
  */
 int bitMatch(int x, int y)  // 8 op
 {
-    return ~(~(x & y) & ~(~x & ~y));  // equivalent to (x & y) | (~x & ~y)
+    // (x & y) | (~x & ~y) <- Apply De Morgan's law
+    return ~(~(x & y) & ~(~x & ~y));
 }
 
 /*
@@ -327,6 +330,7 @@ int bitMatch(int x, int y)  // 8 op
  */
 int bitNor(int x, int y)  // 3 op
 {
+    // De Morgan's law
     return ~x & ~y;
 }
 
@@ -391,6 +395,7 @@ int bitReverse(int x)  // 12 + 25 = 37 op
  */
 int bitXor(int x, int y)  // 8 op
 {
+    // (~x & y) | (x & ~y)  <- Apply De Morgan's law
     return ~(~(~x & y) & ~(x & ~y));
 }
 
@@ -409,7 +414,8 @@ int byteSwap(int x, int n, int m)  // 14 op
     int n_dis = n << 3;
     int m_mask = (x >> m_dis) & 0xFF;
     int n_mask = (x >> n_dis) & 0xFF;
-    x = x ^ (m_mask << m_dis) ^ (n_mask << n_dis);  // clear mth and nth bytes
+    // clear mth and nth bytes if m != n (when m == n, x is the answer)
+    x = x ^ (m_mask << m_dis) ^ (n_mask << n_dis);
     return x | (m_mask << n_dis) | (n_mask << m_dis);
 }
 
@@ -435,9 +441,89 @@ int conditional(int x, int y, int z)  // 7 op
  *   Max ops: 50
  *   Rating: 4
  */
-int countLeadingZero(int x)
+
+int countLeadingZero(int x)  // 39 op
 {
-    return 42;
+    // See countLeadingZero_43()
+
+    int num_leading_zero = 0;
+
+    // value = 11......11 if leading 16 bits are all zero else 00......00
+    int leading_n_bits_all_zero = !(x >> 16) << 31 >> 31;
+    num_leading_zero = num_leading_zero + (leading_n_bits_all_zero & 16);
+    x = x << (leading_n_bits_all_zero & 16);
+
+    // value = 11......11 if leading 8 bits are all zero else 00......00
+    leading_n_bits_all_zero = !(x >> 24) << 31 >> 31;
+    num_leading_zero = num_leading_zero + (leading_n_bits_all_zero & 8);
+    x = x << (leading_n_bits_all_zero & 8);
+
+    // value = 11......11 if leading 4 bits are all zero else 00......00
+    leading_n_bits_all_zero = !(x >> 28) << 31 >> 31;
+    num_leading_zero = num_leading_zero + (leading_n_bits_all_zero & 4);
+    x = x << (leading_n_bits_all_zero & 4);
+
+    // value = 11......11 if leading 2 bits are all zero else 00......00
+    leading_n_bits_all_zero = !(x >> 30) << 31 >> 31;
+    num_leading_zero = num_leading_zero + (leading_n_bits_all_zero & 2);
+    x = x << (leading_n_bits_all_zero & 2);
+
+    // Method above takes 8 ops per iteration,
+    // and the next interation (8 ops) can only get 1-bit information,
+    // therefore, consider the remaining 2 bits seperately will be faster
+
+    int leading_1_bit_is_zero = !(x >> 31);
+    num_leading_zero = num_leading_zero + leading_1_bit_is_zero;
+
+    int bit_30_is_zero = ~(x >> 30);  // information save at 0th bit
+    num_leading_zero = num_leading_zero + (leading_1_bit_is_zero & bit_30_is_zero);
+
+    return num_leading_zero;
+}
+
+int countLeadingZero_43(int x)  // 43 op
+{
+    // https://hackmd.io/s/Bk-uxCYxz
+    // int clz(uint32_t x) {
+    //     if (x == 0) return 32;
+    //     int n = 1;
+    //     if ((x >> 16) == 0) { n += 16; x <<= 16; }
+    //     if ((x >> 24) == 0) { n += 8; x <<= 8; }
+    //     if ((x >> 28) == 0) { n += 4; x <<= 4; }
+    //     if ((x >> 30) == 0) { n += 2; x <<= 2; }
+    //     n = n - (x >> 31);
+    //     return n;
+    // }
+    int num_leading_zero = 0;
+
+    // value = 11......11 if leading 16 bits are all zero else 00......00
+    int leading_n_bits_all_zero = !(x >> 16) << 31 >> 31;
+    num_leading_zero = num_leading_zero + (leading_n_bits_all_zero & 16);
+    x = x << (leading_n_bits_all_zero & 16);
+
+    // value = 11......11 if leading 8 bits are all zero else 00......00
+    leading_n_bits_all_zero = !(x >> 24) << 31 >> 31;
+    num_leading_zero = num_leading_zero + (leading_n_bits_all_zero & 8);
+    x = x << (leading_n_bits_all_zero & 8);
+
+    // value = 11......11 if leading 4 bits are all zero else 00......00
+    leading_n_bits_all_zero = !(x >> 28) << 31 >> 31;
+    num_leading_zero = num_leading_zero + (leading_n_bits_all_zero & 4);
+    x = x << (leading_n_bits_all_zero & 4);
+
+    // value = 11......11 if leading 2 bits are all zero else 00......00
+    leading_n_bits_all_zero = !(x >> 30) << 31 >> 31;
+    num_leading_zero = num_leading_zero + (leading_n_bits_all_zero & 2);
+    x = x << (leading_n_bits_all_zero & 2);
+
+    // value = 11......11 if leading 1 bits are all zero else 00......00
+    leading_n_bits_all_zero = !(x >> 31) << 31 >> 31;
+    num_leading_zero = num_leading_zero + (leading_n_bits_all_zero & 1);
+    x = x << (leading_n_bits_all_zero & 1);
+
+    num_leading_zero = num_leading_zero + !(x >> 31);
+
+    return num_leading_zero;
 }
 
 /*
@@ -651,6 +737,7 @@ int floatIsEqual_hack(unsigned uf, unsigned ug)  // Even this is timeout!
  */
 int floatIsLess(unsigned uf, unsigned ug)  // timeout ?
 {
+    return 42;
     // Check if uf is NaN or ug is NaN or both are zero
     if ((uf & 0x7FFFFFFF) > 0x7f800000 || (ug & 0x7FFFFFFF) > 0x7f800000 ||
         !((uf | ug) << 1))
