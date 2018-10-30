@@ -389,9 +389,9 @@ int bitReverse(int x)  // 12 + 25 = 37 op
  *   Max ops: 14
  *   Rating: 1
  */
-int bitXor(int x, int y)  // 7 op
+int bitXor(int x, int y)  // 8 op
 {
-    return ~((~x & y) & ~(x & ~y));
+    return ~(~(~x & y) & ~(x & ~y));
 }
 
 /*
