@@ -371,9 +371,9 @@ int bitParity(int x)  // 11 op
  *   Max ops: 45
  *   Rating: 4
  */
-int bitReverse(int x)  // 12 + 25 = 37 op
+int bitReverse(int x)  // 11 + 25 = 36 op
 {
-    int hex0000FFFF = (1 << 16) + (~1 + 1);  // -1 => ~1 + 1
+    int hex0000FFFF = (1 << 16) + ~0;
     int hex00FF00FF = hex0000FFFF ^ (hex0000FFFF << 8);
     int hex0F0F0F0F = hex00FF00FF ^ (hex00FF00FF << 4);
     int hex33333333 = hex0F0F0F0F ^ (hex0F0F0F0F << 2);
@@ -442,7 +442,7 @@ int conditional(int x, int y, int z)  // 7 op
  *   Rating: 4
  */
 
-int countLeadingZero(int x)  // 39 op
+int countLeadingZero(int x)  // 36 op
 {
     // See countLeadingZero_43()
 
@@ -463,20 +463,22 @@ int countLeadingZero(int x)  // 39 op
     num_zero = num_zero + (leading_n_zero & 4);
     x = x << (leading_n_zero & 4);
 
-    // value = 11......11 if the leading 2 bits are all zero else 00......00
-    leading_n_zero = !(x >> 30) << 31 >> 31;
-    num_zero = num_zero + (leading_n_zero & 2);
-    x = x << (leading_n_zero & 2);
-
     // Method above takes 8 ops per iteration,
-    // and the next interation (8 ops) can only get 1-bit information,
-    // therefore, consider the remaining 2 bits seperately will be faster
+    // and the next interation (8 ops) can only get 2-bit information,
+    // and we can get 1-bit information in 3 ops.
+    // Hence, consider the remaining 4 bits seperately will be faster
 
-    int leading_1_bit_is_zero = !(x >> 31);
-    num_zero = num_zero + leading_1_bit_is_zero;
+    int bit_31_is_zero = !(x >> 31);
+    num_zero = num_zero + bit_31_is_zero;
 
-    int bit_30_is_zero = ~(x >> 30);  // information save at 0th bit
-    num_zero = num_zero + (leading_1_bit_is_zero & bit_30_is_zero);
+    int bit_31_to_30_is_zero = !(x >> 30);
+    num_zero = num_zero + bit_31_to_30_is_zero;
+
+    int bit_31_to_29_is_zero = !(x >> 29);
+    num_zero = num_zero + bit_31_to_29_is_zero;
+
+    int bit_31_to_28_is_zero = !(x >> 28);
+    num_zero = num_zero + bit_31_to_28_is_zero;
 
     return num_zero;
 }
@@ -545,15 +547,22 @@ int copyLSB(int x)  // 2 op
  *   Max ops: 5
  *   Rating: 2
  */
-int distinctNegation(int x)  // 5 op
+int distinctNegation(int x)  // 3 op
+{
+    // return 1 if x is not 0 (00......00) or tmin (10......00)
+    int throw_sign_bit = x << 1;  // Since !(x << 1) will get warning
+    return !!throw_sign_bit;
+}
+
+int distinctNegation_5(int x)  // 5 op
 {
     // Check if same with x's two's complement
     return !!(x ^ (~x + 1));
 }
 
-int distinctNegation_alternative(int x)  // 5 op
+int distinctNegation_5_bang(int x)  // 5 op
 {
-    // See bang()
+    // See bang() (case 2)
     return ((x ^ (~x + 1)) >> 31) & 1;
 }
 
@@ -935,9 +944,59 @@ int getByte(int x, int n)  // 3 op
  *   Max ops: 70
  *   Rating: 4
  */
-int greatestBitPos(int x)
+
+int greatestBitPos(int x)  // faster, 41 op
 {
-    return 42;
+    // See countLeadingZero()
+
+    int t = x;
+    int num_zero = 0;
+
+    int leading_n_zero = !(t >> 16) << 31 >> 31;
+    num_zero = num_zero + (leading_n_zero & 16);
+    t = t << (leading_n_zero & 16);
+
+    leading_n_zero = !(t >> 24) << 31 >> 31;
+    num_zero = num_zero + (leading_n_zero & 8);
+    t = t << (leading_n_zero & 8);
+
+    leading_n_zero = !(t >> 28) << 31 >> 31;
+    num_zero = num_zero + (leading_n_zero & 4);
+    t = t << (leading_n_zero & 4);
+
+    num_zero = num_zero + !(t >> 31) + !(t >> 30) + !(t >> 29) + !(t >> 28);
+
+    // if (x != 0) return 1 << (31 - n) else return 0
+    return !!x << (32 + ~num_zero);
+}
+
+int greatestBitPos_65(int x)  // 65 op
+{
+    // bitReverse() -> leastBitPos() -> bitReverse()
+    int hex0000ffff = (1 << 16) + ~0;
+    int hex00ff00ff = hex0000ffff ^ (hex0000ffff << 8);
+    int hex0f0f0f0f = hex00ff00ff ^ (hex00ff00ff << 4);
+    int hex33333333 = hex0f0f0f0f ^ (hex0f0f0f0f << 2);
+    int hex55555555 = hex33333333 ^ (hex33333333 << 1);
+
+    int reverse = (x & hex0000ffff) << 16 | ((x >> 16) & hex0000ffff);
+    reverse = (reverse & hex00ff00ff) << 8 | ((reverse >> 8) & hex00ff00ff);
+    reverse = (reverse & hex0f0f0f0f) << 4 | ((reverse >> 4) & hex0f0f0f0f);
+    reverse = (reverse & hex33333333) << 2 | ((reverse >> 2) & hex33333333);
+    reverse = (reverse & hex55555555) << 1 | ((reverse >> 1) & hex55555555);
+
+    // x & (x - 1) clear the least bit
+    // x ^ (x & (x - 1)) get the least bit
+    int rev_no_least = reverse ^ (reverse & (reverse + ~0));
+
+    x =  (rev_no_least & hex0000ffff) << 16 |
+        ((rev_no_least >> 16) & hex0000ffff);
+    x = (x & hex00ff00ff) << 8 | ((x >> 8) & hex00ff00ff);
+    x = (x & hex0f0f0f0f) << 4 | ((x >> 4) & hex0f0f0f0f);
+    x = (x & hex33333333) << 2 | ((x >> 2) & hex33333333);
+    x = (x & hex55555555) << 1 | ((x >> 1) & hex55555555);
+
+    return x;
 }
 
 /* howManyBits - return the minimum number of bits required to represent x in
@@ -1133,16 +1192,16 @@ int isNotEqual(int x, int y)  // 3 op
  *   Max ops: 45
  *   Rating: 4
  */
-int isPallindrome(int x)  // 39 op
+int isPallindrome(int x)  // faster? 38 op
 {
-    int hex0000FFFF = (1 << 16) + (~1 + 1);  // -1 => ~1 + 1
-    int hex00FF00FF = hex0000FFFF ^ (hex0000FFFF << 8);
-    int hex0F0F0F0F = hex00FF00FF ^ (hex00FF00FF << 4);
-    int hex33333333 = hex0F0F0F0F ^ (hex0F0F0F0F << 2);
+    int hex0000ffff = (1 << 16) + ~0;
+    int hex00ff00ff = hex0000ffff ^ (hex0000ffff << 8);
+    int hex0f0f0f0f = hex00ff00ff ^ (hex00ff00ff << 4);
+    int hex33333333 = hex0f0f0f0f ^ (hex0f0f0f0f << 2);
     int hex55555555 = hex33333333 ^ (hex33333333 << 1);
-    int reverse = (x & hex0000FFFF) << 16 | ((x >> 16) & hex0000FFFF);
-    reverse = (reverse & hex00FF00FF) << 8 | ((reverse >> 8) & hex00FF00FF);
-    reverse = (reverse & hex0F0F0F0F) << 4 | ((reverse >> 4) & hex0F0F0F0F);
+    int reverse = (x & hex0000ffff) << 16 | ((x >> 16) & hex0000ffff);
+    reverse = (reverse & hex00ff00ff) << 8 | ((reverse >> 8) & hex00ff00ff);
+    reverse = (reverse & hex0f0f0f0f) << 4 | ((reverse >> 4) & hex0f0f0f0f);
     reverse = (reverse & hex33333333) << 2 | ((reverse >> 2) & hex33333333);
     reverse = (reverse & hex55555555) << 1 | ((reverse >> 1) & hex55555555);
     return !(x ^ reverse);
@@ -1170,8 +1229,9 @@ int isPositive(int x)  // 5 op
  */
 int isPower2(int x)  // 8 op
 {
-    // return (x & (x-1)) == 0 && x > 0;
-    // return !(x & (x + ~0)) & !(x >> 31) & !!x;  11 op
+    // (x & (x-1)) == 0 && x > 0
+    // !(x & (x + ~0)) & !(x >> 31) & !!x  11 op
+    // Apply De Morgan's law
     return !((x & (x + ~0)) | (x >> 31) | !x);
 }
 
@@ -1243,9 +1303,9 @@ int isZero(int x)  // 1 op
  *   Max ops: 6
  *   Rating: 2
  */
-int leastBitPos(int x)  // 3 op
+int leastBitPos(int x)  // 4 op
 {
-    int x_no_least_bit = x & (x - 1);
+    int x_no_least_bit = x & (x + ~0);
     return x ^ x_no_least_bit;
 }
 
