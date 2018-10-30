@@ -819,18 +819,12 @@ unsigned floatInt2Float(int x)  // 35? op
  *   Max ops: 25
  *   Rating: 2
  */
-int floatIsEqual(unsigned uf, unsigned ug)  // timeout ??
+int floatIsEqual(unsigned uf, unsigned ug)  // 11? op
 {
-    return 42;
     // return (uf is not NaN && ug is not NaN && (uf equals to ug || both are
     // zero))
     return (uf & 0x7FFFFFFF) <= 0x7F800000 && (ug & 0x7FFFFFFF) <= 0x7F800000 &&
            (uf == ug || !((uf | ug) << 1));
-}
-
-int floatIsEqual_hack(unsigned uf, unsigned ug)  // Even this is timeout!
-{
-    return *(float *) &uf == *(float *) &ug;
 }
 
 /*
@@ -844,9 +838,8 @@ int floatIsEqual_hack(unsigned uf, unsigned ug)  // Even this is timeout!
  *   Max ops: 30
  *   Rating: 3
  */
-int floatIsLess(unsigned uf, unsigned ug)  // timeout ??
+int floatIsLess(unsigned uf, unsigned ug)  // 23? op
 {
-    return 42;
     // Check if uf is NaN or ug is NaN or both are zero
     if ((uf & 0x7FFFFFFF) > 0x7F800000 || (ug & 0x7FFFFFFF) > 0x7F800000 ||
         !((uf | ug) << 1))
@@ -859,11 +852,6 @@ int floatIsLess(unsigned uf, unsigned ug)  // timeout ??
         (ug_sign == uf_sign && ((ug_sign && ug < uf) || (!ug_sign && uf < ug))))
         return 1;
     return 0;
-}
-
-int floatIsLess_hack(unsigned uf, unsigned ug)  // Even this is timeout
-{
-    return *(float *) &uf < *(float *) &ug;
 }
 
 /*
@@ -898,9 +886,8 @@ unsigned floatNegate(unsigned uf)  // 5? op
  *   Max ops: 30
  *   Rating: 4
  */
-unsigned floatPower2(int x)  // timeout ??
+unsigned floatPower2(int x)  // 12? op
 {
-    return 42;
     /*
      * Observe:
      *   exp = 2^8,   frac = 0     =>  2 ^ INF
@@ -1133,6 +1120,7 @@ int greatestBitPos_64(int x)  // 64 op
  */
 int howManyBits(int x)
 {
+    // Find 32 - (max(leading zeros, leading ones) - 1)
     return 0;
 }
 
@@ -1437,9 +1425,28 @@ int leastBitPos(int x)  // 4 op
  *   Max ops: 50
  *   Rating: 4
  */
-int leftBitCount(int x)
+int leftBitCount(int x)  // 37 op
 {
-    return 42;
+    // Convert to counting leading zeros, see countLeadingZero()
+    x = ~x;
+
+    int num_zero = 0;
+
+    int leading_n_zero = !(x >> 16) << 31 >> 31;
+    num_zero = num_zero + (leading_n_zero & 16);
+    x = x << (leading_n_zero & 16);
+
+    leading_n_zero = !(x >> 24) << 31 >> 31;
+    num_zero = num_zero + (leading_n_zero & 8);
+    x = x << (leading_n_zero & 8);
+
+    leading_n_zero = !(x >> 28) << 31 >> 31;
+    num_zero = num_zero + (leading_n_zero & 4);
+    x = x << (leading_n_zero & 4);
+
+    num_zero = num_zero + !(x >> 31) + !(x >> 30) + !(x >> 29) + !(x >> 28);
+
+    return num_zero;
 }
 
 /*
@@ -1566,7 +1573,7 @@ int oddBits(void)  // 4 op
  *   Max ops: 20
  *   Rating: 3
  */
-int remainderPower2(int x, int n)  // 16 op, faster
+int remainderPower2(int x, int n)  // faster, 16 op
 {
     int x_sign = x >> 31;
     int x_abs = (x ^ x_sign) + (x_sign & 1);
@@ -1616,7 +1623,7 @@ int rotateLeft(int x, int n)  // 9 op
  *   Max ops: 25
  *   Rating: 3
  */
-int rotateRight(int x, int n)  // 12 op, change neg to pos maybe faster?
+int rotateRight(int x, int n)  // change neg to pos maybe faster? 12 op
 {
     int keep_mask = (1 << n) + ~0;
     int shift_dis = 33 + ~n;  // 32 - n
@@ -1707,7 +1714,7 @@ int sign(int x)  // 3 op
  *   Max ops: 15
  *   Rating: 4
  */
-int signMag2TwosComp(int x)  // 15 op, faster
+int signMag2TwosComp(int x)  // faster, 15 op
 {
     int no_sign_bit = x << 1;         // Since !(x << 1) has warning
     x = x & ~(!(no_sign_bit) << 31);  // Convert -0 to +0
