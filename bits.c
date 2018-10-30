@@ -446,39 +446,39 @@ int countLeadingZero(int x)  // 39 op
 {
     // See countLeadingZero_43()
 
-    int num_leading_zero = 0;
+    int num_zero = 0;
 
-    // value = 11......11 if leading 16 bits are all zero else 00......00
-    int leading_n_bits_all_zero = !(x >> 16) << 31 >> 31;
-    num_leading_zero = num_leading_zero + (leading_n_bits_all_zero & 16);
-    x = x << (leading_n_bits_all_zero & 16);
+    // value = 11......11 if the leading 16 bits are all zero else 00......00
+    int leading_n_zero = !(x >> 16) << 31 >> 31;
+    num_zero = num_zero + (leading_n_zero & 16);
+    x = x << (leading_n_zero & 16);
 
-    // value = 11......11 if leading 8 bits are all zero else 00......00
-    leading_n_bits_all_zero = !(x >> 24) << 31 >> 31;
-    num_leading_zero = num_leading_zero + (leading_n_bits_all_zero & 8);
-    x = x << (leading_n_bits_all_zero & 8);
+    // value = 11......11 if the leading 8 bits are all zero else 00......00
+    leading_n_zero = !(x >> 24) << 31 >> 31;
+    num_zero = num_zero + (leading_n_zero & 8);
+    x = x << (leading_n_zero & 8);
 
-    // value = 11......11 if leading 4 bits are all zero else 00......00
-    leading_n_bits_all_zero = !(x >> 28) << 31 >> 31;
-    num_leading_zero = num_leading_zero + (leading_n_bits_all_zero & 4);
-    x = x << (leading_n_bits_all_zero & 4);
+    // value = 11......11 if the leading 4 bits are all zero else 00......00
+    leading_n_zero = !(x >> 28) << 31 >> 31;
+    num_zero = num_zero + (leading_n_zero & 4);
+    x = x << (leading_n_zero & 4);
 
-    // value = 11......11 if leading 2 bits are all zero else 00......00
-    leading_n_bits_all_zero = !(x >> 30) << 31 >> 31;
-    num_leading_zero = num_leading_zero + (leading_n_bits_all_zero & 2);
-    x = x << (leading_n_bits_all_zero & 2);
+    // value = 11......11 if the leading 2 bits are all zero else 00......00
+    leading_n_zero = !(x >> 30) << 31 >> 31;
+    num_zero = num_zero + (leading_n_zero & 2);
+    x = x << (leading_n_zero & 2);
 
     // Method above takes 8 ops per iteration,
     // and the next interation (8 ops) can only get 1-bit information,
     // therefore, consider the remaining 2 bits seperately will be faster
 
     int leading_1_bit_is_zero = !(x >> 31);
-    num_leading_zero = num_leading_zero + leading_1_bit_is_zero;
+    num_zero = num_zero + leading_1_bit_is_zero;
 
     int bit_30_is_zero = ~(x >> 30);  // information save at 0th bit
-    num_leading_zero = num_leading_zero + (leading_1_bit_is_zero & bit_30_is_zero);
+    num_zero = num_zero + (leading_1_bit_is_zero & bit_30_is_zero);
 
-    return num_leading_zero;
+    return num_zero;
 }
 
 int countLeadingZero_43(int x)  // 43 op
@@ -494,36 +494,36 @@ int countLeadingZero_43(int x)  // 43 op
     //     n = n - (x >> 31);
     //     return n;
     // }
-    int num_leading_zero = 0;
+    int num_zero = 0;
 
-    // value = 11......11 if leading 16 bits are all zero else 00......00
-    int leading_n_bits_all_zero = !(x >> 16) << 31 >> 31;
-    num_leading_zero = num_leading_zero + (leading_n_bits_all_zero & 16);
-    x = x << (leading_n_bits_all_zero & 16);
+    // value = 11......11 if the leading 16 bits are all zero else 00......00
+    int leading_n_zero = !(x >> 16) << 31 >> 31;
+    num_zero = num_zero + (leading_n_zero & 16);
+    x = x << (leading_n_zero & 16);
 
-    // value = 11......11 if leading 8 bits are all zero else 00......00
-    leading_n_bits_all_zero = !(x >> 24) << 31 >> 31;
-    num_leading_zero = num_leading_zero + (leading_n_bits_all_zero & 8);
-    x = x << (leading_n_bits_all_zero & 8);
+    // value = 11......11 if the leading 8 bits are all zero else 00......00
+    leading_n_zero = !(x >> 24) << 31 >> 31;
+    num_zero = num_zero + (leading_n_zero & 8);
+    x = x << (leading_n_zero & 8);
 
-    // value = 11......11 if leading 4 bits are all zero else 00......00
-    leading_n_bits_all_zero = !(x >> 28) << 31 >> 31;
-    num_leading_zero = num_leading_zero + (leading_n_bits_all_zero & 4);
-    x = x << (leading_n_bits_all_zero & 4);
+    // value = 11......11 if the leading 4 bits are all zero else 00......00
+    leading_n_zero = !(x >> 28) << 31 >> 31;
+    num_zero = num_zero + (leading_n_zero & 4);
+    x = x << (leading_n_zero & 4);
 
-    // value = 11......11 if leading 2 bits are all zero else 00......00
-    leading_n_bits_all_zero = !(x >> 30) << 31 >> 31;
-    num_leading_zero = num_leading_zero + (leading_n_bits_all_zero & 2);
-    x = x << (leading_n_bits_all_zero & 2);
+    // value = 11......11 if the leading 2 bits are all zero else 00......00
+    leading_n_zero = !(x >> 30) << 31 >> 31;
+    num_zero = num_zero + (leading_n_zero & 2);
+    x = x << (leading_n_zero & 2);
 
-    // value = 11......11 if leading 1 bits are all zero else 00......00
-    leading_n_bits_all_zero = !(x >> 31) << 31 >> 31;
-    num_leading_zero = num_leading_zero + (leading_n_bits_all_zero & 1);
-    x = x << (leading_n_bits_all_zero & 1);
+    // value = 11......11 if the leading 1 bits are all zero else 00......00
+    leading_n_zero = !(x >> 31) << 31 >> 31;
+    num_zero = num_zero + (leading_n_zero & 1);
+    x = x << (leading_n_zero & 1);
 
-    num_leading_zero = num_leading_zero + !(x >> 31);
+    num_zero = num_zero + !(x >> 31);
 
-    return num_leading_zero;
+    return num_zero;
 }
 
 /*
