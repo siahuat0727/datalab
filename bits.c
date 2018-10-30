@@ -389,9 +389,9 @@ int bitReverse(int x)  // 12 + 25 = 37 op
  *   Max ops: 14
  *   Rating: 1
  */
-int bitXor(int x, int y)  // 5 op
+int bitXor(int x, int y)  // 7 op
 {
-    return (~x & y) | (x & ~y);
+    return ~((~x & y) & ~(x & ~y));
 }
 
 /*
@@ -481,8 +481,11 @@ int distinctNegation_alternative(int x)  // 5 op
  */
 int dividePower2(int x, int n)  // 7 op
 {
-    // 'x >> n' is equal to floor(x/(2^n))
-    // But we need ceil(x/(2^n)) when x is negative
+    // 'x >> n' is equal to floor(x/(2^n)), whenever x is positive or negative
+    // But we want ceil(x/(2^n)) when x is negative, that is, round toward zero
+    // And ceil(x/(2^n)) equals to floor((x+(2^n)-1)/(2^n)),
+    // when divisor is integer
+    // So we add (2^n)-1 to x when x is negative
     int neg_mask = x >> 31;
     return (x + (neg_mask & ((1 << n) + ~0))) >> n;
 }
@@ -515,7 +518,9 @@ int evenBits(void)  // 4 op
 int ezThreeFourths(int x)  // 6 op
 {
     int x_mul_3 = x + (x << 1);
-    return (x_mul_3 + ((x_mul_3 >> 31) & 3)) >> 2;
+    int x_mul_3_is_neg = x_mul_3 >> 31;
+    // See dividePower2()
+    return (x_mul_3 + (x_mul_3_is_neg & 3)) >> 2;
 }
 
 // ERROR: Test ezThreeFourths(-2147483647[0x80000001]) failed...
@@ -904,10 +909,8 @@ int intLog2(int x)
 int isAsciiDigit(int x)  // 8 op
 {
     // x - 0x30 >= 0 && x - 0x39 <= 0
-    // !(x - 0x30 < 0 || x - 0x39 > 0)
-    // !(x - 0x30 < 0 || x - 0x3A >= 0)
-    // !(((x - 0x30) > 31) | !((x - 0x3A) > 31));
-    // (!((x - 0x30) > 31)) & ((x - 0x3A) > 31);
+    // x - 0x30 >= 0 && x - 0x3A < 0 , easier to check if a number is negative
+    // (!((x - 0x30) >> 31)) & ((x - 0x3A) >> 31);
     return (!((x + ~0x2F) >> 31)) & ((x + ~0x39) >> 31);
 }
 
@@ -932,13 +935,13 @@ int isEqual(int x, int y)  // 2 op
  */
 int isGreater(int x, int y)  // 10 op
 {
-    // return (x is +,0 && y is -) || (x, y have same sign && (x - y) > 0)
+    // See isGreater_12()
     return (((y & ~x) | ~((x ^ y) | (x + ~y))) >> 31) & 1;
 }
 
 int isGreater_12(int x, int y)  // 12 op
 {
-    // return (x is +,0 && y is -) || (x, y have same sign && (x - y) > 0)
+    // (x is +,0 && y is -) || (x, y have same sign && (x - y) > 0) <- De Morgan
     return ((y >> 31) & !(x >> 31)) | !(((x ^ y) >> 31) | ((x + ~y) >> 31));
 }
 
@@ -951,13 +954,13 @@ int isGreater_12(int x, int y)  // 12 op
  */
 int isLess(int x, int y)  // 10 op
 {
-    // return (x is - && y is +,0) || (x, y have same sign && (y - x) > 0)
+    // See isLess_12()
     return (((x & ~y) | ~((x ^ y) | (y + ~x))) >> 31) & 1;
 }
 
 int isLess_12(int x, int y)  // 12 op
 {
-    // return (x is - && y is +,0) || (x, y have same sign && (y - x) > 0)
+    // (x is - && y is +,0) || (x, y have same sign && (y - x) > 0) <- De Morgan
     return ((x >> 31) & !(y >> 31)) | !(((x ^ y) >> 31) | ((y + ~x) >> 31));
 }
 
@@ -968,15 +971,21 @@ int isLess_12(int x, int y)  // 12 op
  *   Max ops: 24
  *   Rating: 3
  */
-int isLessOrEqual(int x, int y)  // 11 op
+int isLessOrEqual(int x, int y)  // 9 op
 {
-    // return (x is - && y is +,0) || (x, y have same sign && (y - x) >= 0)
+    // See isGreater() + De Morgan's law
+    return (((~y | x) & ((x ^ y) | (x + ~y))) >> 31) & 1;
+}
+
+int isLessOrEqual_11(int x, int y)  // 11 op
+{
+    // See isLessOrEqual_13()
     return (((x & ~y) | ~((x ^ y) | (y + ~x + 1))) >> 31) & 1;
 }
 
 int isLessOrEqual_13(int x, int y)  // 13 op
 {
-    // return (x is - && y is +,0) || (x, y have same sign && (y - x) >= 0)
+    // (x is - && y is +,0) || (x, y have same sign && (y - x) >= 0)
     return ((x >> 31) & !(y >> 31)) | !(((x ^ y) >> 31) | ((y + ~x + 1) >> 31));
 }
 
@@ -1086,10 +1095,25 @@ int isPower2(int x)  // 8 op
  *   Max ops: 10
  *   Rating: 1
  */
-int isTmax(int x)  // 4 op
+int isTmax(int x)  // 7 op
 {
-    int maybe_tmin = x + 1;            // Tmax + 1 => Tmin
-    return !(maybe_tmin ^ (1 << 31));  // check if maybe_tmin is tmin
+    // See isTmax_8() + De Morgan's law
+    int x_plus_1 = x + 1;
+    return !(~(x ^ x_plus_1) | !~x);
+}
+
+int isTmax_8(int x)  // 8 op
+{
+    // Observe: ~(x ^ (x+1)) equal to 0 only when x is tmax or -1
+    int x_plus_1 = x + 1;
+    // ~(x ^ (x+1)) equal to 0 && x is not -1
+    return !~(x ^ x_plus_1) & !!~x;
+}
+
+int isTmax_shift(int x)  // Can't use shift
+{
+    int tmax = ~(1 << 31);
+    return !(x ^ tmax);
 }
 
 /*
@@ -1099,9 +1123,17 @@ int isTmax(int x)  // 4 op
  *   Max ops: 10
  *   Rating: 1
  */
-int isTmin(int x)  // 3 op
+int isTmin(int x)  // 8 op
 {
-    return !(x ^ (1 << 31));
+    // See isTmax()
+    int x_minus_1 = x + ~0;
+    return !(~(x ^ x_minus_1) | !~x_minus_1);
+}
+
+int isTmin_shift(int x)  // Can't use shift
+{
+    int tmin = 1 << 31;
+    return !(x ^ tmin);
 }
 
 /*
