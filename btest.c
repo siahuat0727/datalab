@@ -14,16 +14,16 @@
  * FIXME: not 64-bit safe. Always compile with gcc -m32 option.
  */
 
+#include "btest.h"
+#include <limits.h>
+#include <math.h>
+#include <setjmp.h>
+#include <signal.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
-#include <signal.h>
-#include <setjmp.h>
-#include <math.h>
 #include <time.h>
-#include "btest.h"
+#include <unistd.h>
 
 /* Not declared in some stdlib.h files, so define here */
 float strtof(const char *nptr, char **endptr);
