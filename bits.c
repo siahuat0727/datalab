@@ -298,12 +298,13 @@ int bitCount(int x)
  *   Max ops: 16
  *   Rating: 3
  */
-int bitMask(int highbit, int lowbit)  // 7 op
+int bitMask(int highbit, int lowbit)  // 6 op
 {
     // Idea from < aben20807 >:
     // Use '~0 << lowbit' instead of '~((1 << lowbit) + ~0)'
-    int high_mask = ~0 << lowbit;
-    int low_mask = ((1 << highbit << 1) + ~0);
+    int ones = ~0;  // All bits are set to 1 or decimal -1
+    int high_mask = ones << lowbit;
+    int low_mask = ((1 << highbit << 1) + ones);
     return high_mask & low_mask;
 }
 
@@ -719,7 +720,7 @@ unsigned floatInt2Float(int x)
  *   Max ops: 25
  *   Rating: 2
  */
-int floatIsEqual(unsigned uf, unsigned ug)  // timeout ?
+int floatIsEqual(unsigned uf, unsigned ug)  // timeout ??
 {
     return 42;
     // return (uf is not NaN && ug is not NaN && (uf equals to ug || both are
@@ -744,7 +745,7 @@ int floatIsEqual_hack(unsigned uf, unsigned ug)  // Even this is timeout!
  *   Max ops: 30
  *   Rating: 3
  */
-int floatIsLess(unsigned uf, unsigned ug)  // timeout ?
+int floatIsLess(unsigned uf, unsigned ug)  // timeout ??
 {
     return 42;
     // Check if uf is NaN or ug is NaN or both are zero
@@ -798,10 +799,25 @@ unsigned floatNegate(unsigned uf)  // 5? op
  *   Max ops: 30
  *   Rating: 4
  */
-unsigned floatPower2(int x)
+unsigned floatPower2(int x)  // timeout ??
 {
-    // int is_NaN = (x & 0x7FFFFFFF) > 0x7f800000;
     return 42;
+    // Observe:
+    // exp = 2^8,   frac = 0     =>  2 ^ INF
+    // exp = 2^8-1, frac = 0     =>  2 ^ (128)
+    // exp = 2,     frac = 0     =>  2 ^ (-125)
+    // exp = 1,     frac = 0     =>  2 ^ (-126)
+    // exp = 0,     frac = 2^23  =>  2 ^ (-127)
+    // exp = 0,     frac = 2^22  =>  2 ^ (-128)
+    // exp = 0,     frac = 2^0   =>  2 ^ (-150)
+
+    if (x < -150)
+        return 0;
+    if (x <= -127)
+        return 1 << (x + 127);
+    if (x <= 128)
+        return (x + 127) << 23;
+    return 0x7F800000;  // INF;
 }
 
 /*
@@ -970,10 +986,12 @@ int greatestBitPos(int x)  // faster, 41 op
     return !!x << (32 + ~num_zero);
 }
 
-int greatestBitPos_65(int x)  // 65 op
+int greatestBitPos_65(int x)  // 64 op
 {
     // bitReverse() -> leastBitPos() -> bitReverse()
-    int hex0000ffff = (1 << 16) + ~0;
+    int ones = ~0;  // All bits are set to 1 or decimal -1
+
+    int hex0000ffff = (1 << 16) + ones;
     int hex00ff00ff = hex0000ffff ^ (hex0000ffff << 8);
     int hex0f0f0f0f = hex00ff00ff ^ (hex00ff00ff << 4);
     int hex33333333 = hex0f0f0f0f ^ (hex0f0f0f0f << 2);
@@ -987,7 +1005,7 @@ int greatestBitPos_65(int x)  // 65 op
 
     // x & (x - 1) clear the least bit
     // x ^ (x & (x - 1)) get the least bit
-    int rev_no_least = reverse ^ (reverse & (reverse + ~0));
+    int rev_no_least = reverse ^ (reverse & (reverse + ones));
 
     x =  (rev_no_least & hex0000ffff) << 16 |
         ((rev_no_least >> 16) & hex0000ffff);
@@ -1643,7 +1661,7 @@ int thirdBits_6(void)  // 6 op
 }
 
 /*
- * TMax - return maximum two's complement integer
+ * tmax - return maximum two's complement integer
  *   Legal ops: ! ~ & ^ | + << >>
  *   Max ops: 4
  *   Rating: 1
