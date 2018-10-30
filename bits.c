@@ -245,10 +245,12 @@ int anyOddBit_10(int x)  // 10 op
  */
 int bang(int x)  // 6 op
 {
-    // Consider sign bit of x and two's complement of x:
-    // x = 0     => both are 0   WE NEED THIS
-    // x = tmin  => both are 1
-    // otherwise => exactly one 0 and one 1
+    /*
+     * Consider sign bit of x and two's complement of x:
+     * x = 0     => both are 0   WE NEED THIS
+     * x = tmin  => both are 1
+     * otherwise => exactly one 0 and one 1
+     */
 
     int x_twos_comp = ~x + 1;
     return (((x | x_twos_comp) >> 31) ^ 1) & 1;
@@ -687,12 +689,29 @@ unsigned floatAbsVal(unsigned uf)  // ? op
  */
 int floatFloat2Int(unsigned uf)
 {
-    // int sign = (uf >> 31) & 0x1;
-    // int exponent = (uf >> 23) & 0xFF;
-    // int frac = uf & ((1 << 23) - 1); // TODO -
-    // int f = (!!exponent << 23) | frac;
+    int is_neg = uf >> 31;
+    int exponent = (uf >> 23) & 0xFF;
+    int fraction = uf & 0x7FFFFF;
+    int bias = 127;
+    int len_fraction = 23;
 
-    return 42;
+    // (NaN or INF) || greater than values that a 32-bit int can represent
+    if (exponent == 0xFF || exponent > bias + 31)
+        return 0x80000000;
+
+    // Can be represented as 32-bit int
+    if (exponent >= bias) {
+        int power2 = exponent - bias;
+        if (power2 < len_fraction)
+            fraction = fraction >> (len_fraction - power2);
+        else
+            fraction = fraction << (power2 - len_fraction);
+        int value = (1 << power2) | fraction;
+        return is_neg ? -value : value;
+    }
+
+    // Smaller than values that a 32-bit int can represent
+    return 0;
 }
 
 /*
@@ -706,7 +725,47 @@ int floatFloat2Int(unsigned uf)
  */
 unsigned floatInt2Float(int x)
 {
-    return 42;
+    if (x == 0)
+        return 0;
+    int x_sign = x & 0x80000000;
+    int x_abs = x_sign ? -x : x;  // Need to consider Tmin
+
+    int exponent, fraction;
+    int bias = 127;
+    int len_fraction = 23;
+    int power2 = 31;
+    while (!(x_abs >> power2) && power2 > 0) {
+        power2--;
+    }
+    exponent = power2 + bias;
+    if (power2 <= len_fraction) {
+        fraction = (((1 << power2) - 1) & x_abs) << (len_fraction - power2);
+    } else {
+        fraction = ((1 << power2) - 1) & x_abs;
+        int num_fall_off = power2 - len_fraction;
+
+        /*
+         * Consider round off
+         * GRS action: https://stackoverflow.com/questions/8981913
+         */
+        int G = x_abs & (1 << num_fall_off);
+        int R = x_abs & (1 << (num_fall_off - 1));
+
+        /*
+         * Shift twice to avoid undefined bahavior (<< 32), since:
+         *     24 <= power2 <= 31
+         *     1 <= num_fall_off <= 31
+         * We want 'x_abs << (33 - num_fall_off)'
+         */
+        int S = x_abs << (32 - num_fall_off) << 1;
+
+        fraction = fraction >> (power2 - len_fraction);
+
+        // Check if need to round up or round-to-even
+        fraction += R && (S || G);
+    }
+
+    return (x_sign | (exponent << len_fraction)) + fraction;
 }
 
 /*
@@ -725,7 +784,7 @@ int floatIsEqual(unsigned uf, unsigned ug)  // timeout ??
     return 42;
     // return (uf is not NaN && ug is not NaN && (uf equals to ug || both are
     // zero))
-    return (uf & 0x7fffffff) <= 0x7f800000 && (ug & 0x7fffffff) <= 0x7f800000 &&
+    return (uf & 0x7FFFFFFF) <= 0x7F800000 && (ug & 0x7FFFFFFF) <= 0x7F800000 &&
            (uf == ug || !((uf | ug) << 1));
 }
 
@@ -749,7 +808,7 @@ int floatIsLess(unsigned uf, unsigned ug)  // timeout ??
 {
     return 42;
     // Check if uf is NaN or ug is NaN or both are zero
-    if ((uf & 0x7FFFFFFF) > 0x7f800000 || (ug & 0x7FFFFFFF) > 0x7f800000 ||
+    if ((uf & 0x7FFFFFFF) > 0x7F800000 || (ug & 0x7FFFFFFF) > 0x7F800000 ||
         !((uf | ug) << 1))
         return 0;
     int uf_sign = uf >> 31;
@@ -780,7 +839,7 @@ int floatIsLess_hack(unsigned uf, unsigned ug)  // Even this is timeout
  */
 unsigned floatNegate(unsigned uf)  // 5? op
 {
-    int is_NaN = (uf & 0x7FFFFFFF) > 0x7f800000;
+    int is_NaN = (uf & 0x7FFFFFFF) > 0x7F800000;
     // Toggle sign bit if uf is not NaN
     return is_NaN ? uf : uf ^ (1 << 31);
 }
@@ -802,15 +861,16 @@ unsigned floatNegate(unsigned uf)  // 5? op
 unsigned floatPower2(int x)  // timeout ??
 {
     return 42;
-    // Observe:
-    // exp = 2^8,   frac = 0     =>  2 ^ INF
-    // exp = 2^8-1, frac = 0     =>  2 ^ (128)
-    // exp = 2,     frac = 0     =>  2 ^ (-125)
-    // exp = 1,     frac = 0     =>  2 ^ (-126)
-    // exp = 0,     frac = 2^23  =>  2 ^ (-127)
-    // exp = 0,     frac = 2^22  =>  2 ^ (-128)
-    // exp = 0,     frac = 2^0   =>  2 ^ (-150)
-
+    /*
+     * Observe:
+     *   exp = 2^8,   frac = 0     =>  2 ^ INF
+     *   exp = 2^8-1, frac = 0     =>  2 ^ (128)
+     *   exp = 2,     frac = 0     =>  2 ^ (-125)
+     *   exp = 1,     frac = 0     =>  2 ^ (-126)
+     *   exp = 0,     frac = 2^23  =>  2 ^ (-127)
+     *   exp = 0,     frac = 2^22  =>  2 ^ (-128)
+     *   exp = 0,     frac = 2^0   =>  2 ^ (-150)
+     */
     if (x < -150)
         return 0;
     if (x <= -127)
@@ -915,12 +975,14 @@ unsigned floatScale64(unsigned uf)  // 16? op
 unsigned floatUnsigned2Float(unsigned u)  // 26? op
 {
     if (u) {
+        int len_fraction = 23;
         int greatest_bit_pos = 31;
         while (!((1 << greatest_bit_pos) & u)) {
             greatest_bit_pos--;
         }
-        int diff = 23 - greatest_bit_pos;
-        int exponent = 150 - diff;  // 127 (bias) + 23 - diff
+        int diff = len_fraction - greatest_bit_pos;
+        int bias = 127;
+        int exponent = bias + len_fraction - diff;  // 127 (bias) + 23 - diff
         if (diff >= 0) {
             u <<= diff;
         } else {
@@ -934,7 +996,7 @@ unsigned floatUnsigned2Float(unsigned u)  // 26? op
             u += R && (S || G);
         }
         // | sign=0 | exponent | fraction |
-        u = (exponent << 23) | (u & 0x7FFFFF);
+        u = (exponent << len_fraction) | (u & 0x7FFFFF);
     }
     return u;
 }
@@ -986,20 +1048,20 @@ int greatestBitPos(int x)  // faster, 41 op
     return !!x << (32 + ~num_zero);
 }
 
-int greatestBitPos_65(int x)  // 64 op
+int greatestBitPos_64(int x)  // 64 op
 {
     // bitReverse() -> leastBitPos() -> bitReverse()
     int ones = ~0;  // All bits are set to 1 or decimal -1
 
-    int hex0000ffff = (1 << 16) + ones;
-    int hex00ff00ff = hex0000ffff ^ (hex0000ffff << 8);
-    int hex0f0f0f0f = hex00ff00ff ^ (hex00ff00ff << 4);
-    int hex33333333 = hex0f0f0f0f ^ (hex0f0f0f0f << 2);
+    int hex0000FFFF = (1 << 16) + ones;
+    int hex00FF00FF = hex0000FFFF ^ (hex0000FFFF << 8);
+    int hex0F0F0F0F = hex00FF00FF ^ (hex00FF00FF << 4);
+    int hex33333333 = hex0F0F0F0F ^ (hex0F0F0F0F << 2);
     int hex55555555 = hex33333333 ^ (hex33333333 << 1);
 
-    int reverse = (x & hex0000ffff) << 16 | ((x >> 16) & hex0000ffff);
-    reverse = (reverse & hex00ff00ff) << 8 | ((reverse >> 8) & hex00ff00ff);
-    reverse = (reverse & hex0f0f0f0f) << 4 | ((reverse >> 4) & hex0f0f0f0f);
+    int reverse = (x & hex0000FFFF) << 16 | ((x >> 16) & hex0000FFFF);
+    reverse = (reverse & hex00FF00FF) << 8 | ((reverse >> 8) & hex00FF00FF);
+    reverse = (reverse & hex0F0F0F0F) << 4 | ((reverse >> 4) & hex0F0F0F0F);
     reverse = (reverse & hex33333333) << 2 | ((reverse >> 2) & hex33333333);
     reverse = (reverse & hex55555555) << 1 | ((reverse >> 1) & hex55555555);
 
@@ -1007,10 +1069,10 @@ int greatestBitPos_65(int x)  // 64 op
     // x ^ (x & (x - 1)) get the least bit
     int rev_no_least = reverse ^ (reverse & (reverse + ones));
 
-    x =  (rev_no_least & hex0000ffff) << 16 |
-        ((rev_no_least >> 16) & hex0000ffff);
-    x = (x & hex00ff00ff) << 8 | ((x >> 8) & hex00ff00ff);
-    x = (x & hex0f0f0f0f) << 4 | ((x >> 4) & hex0f0f0f0f);
+    x = (rev_no_least & hex0000FFFF) << 16 |
+        ((rev_no_least >> 16) & hex0000FFFF);
+    x = (x & hex00FF00FF) << 8 | ((x >> 8) & hex00FF00FF);
+    x = (x & hex0F0F0F0F) << 4 | ((x >> 4) & hex0F0F0F0F);
     x = (x & hex33333333) << 2 | ((x >> 2) & hex33333333);
     x = (x & hex55555555) << 1 | ((x >> 1) & hex55555555);
 
@@ -1212,14 +1274,14 @@ int isNotEqual(int x, int y)  // 3 op
  */
 int isPallindrome(int x)  // faster? 38 op
 {
-    int hex0000ffff = (1 << 16) + ~0;
-    int hex00ff00ff = hex0000ffff ^ (hex0000ffff << 8);
-    int hex0f0f0f0f = hex00ff00ff ^ (hex00ff00ff << 4);
-    int hex33333333 = hex0f0f0f0f ^ (hex0f0f0f0f << 2);
+    int hex0000FFFF = (1 << 16) + ~0;
+    int hex00FF00FF = hex0000FFFF ^ (hex0000FFFF << 8);
+    int hex0F0F0F0F = hex00FF00FF ^ (hex00FF00FF << 4);
+    int hex33333333 = hex0F0F0F0F ^ (hex0F0F0F0F << 2);
     int hex55555555 = hex33333333 ^ (hex33333333 << 1);
-    int reverse = (x & hex0000ffff) << 16 | ((x >> 16) & hex0000ffff);
-    reverse = (reverse & hex00ff00ff) << 8 | ((reverse >> 8) & hex00ff00ff);
-    reverse = (reverse & hex0f0f0f0f) << 4 | ((reverse >> 4) & hex0f0f0f0f);
+    int reverse = (x & hex0000FFFF) << 16 | ((x >> 16) & hex0000FFFF);
+    reverse = (reverse & hex00FF00FF) << 8 | ((reverse >> 8) & hex00FF00FF);
+    reverse = (reverse & hex0F0F0F0F) << 4 | ((reverse >> 4) & hex0F0F0F0F);
     reverse = (reverse & hex33333333) << 2 | ((reverse >> 2) & hex33333333);
     reverse = (reverse & hex55555555) << 1 | ((reverse >> 1) & hex55555555);
     return !(x ^ reverse);
