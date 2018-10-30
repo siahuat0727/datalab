@@ -285,9 +285,43 @@ int bitAnd(int x, int y)  // 4 op
  *   Max ops: 40
  *   Rating: 4
  */
-int bitCount(int x)
+int bitCount(int x)  // 31 op
 {
-    return 42;
+    /*
+     * Idea: https://www.viseator.com/2017/06/18/CS_APP_DataLab/
+     *
+     * counting parallel and in place
+     *
+     * 'x' means ignore the column where '+' means add up the column
+     *                                   x + x + x + x + x
+     * consider 8-bit x:                |0|1|1|1|0|0|0|1|
+     * shift 1 bit:                       |0|1|1|1|0|0|0|1|
+     * add the specific column:         | 01| 10| 00| 01|
+     * number of bit 1 in each group:   | 1 | 2 | 0 | 1 |
+     *
+     * repeat similar action              x  +  x  +  x
+     * the value of x now:              |01|10|00|01|
+     * shift 2 bit:                        |01|10|00|01|
+     * add the specific column:         | 0011| 0001|
+     * number of bit 1 in each group:   |  3  |  1  |
+     *
+     * repeat similar action               x    +    x
+     * the value of x now:              |0011|0001|
+     * shift 4 bit:                          |0011|0001|
+     * add the specific column:         | 00000100|
+     * number of bit 1 in each group:   |     4   | <- the total bit 1 in x
+     */
+    int hex0000FFFF = (1 << 16) + ~0;
+    int hex00FF00FF = hex0000FFFF ^ (hex0000FFFF << 8);
+    int hex0F0F0F0F = hex00FF00FF ^ (hex00FF00FF << 4);
+    int hex33333333 = hex0F0F0F0F ^ (hex0F0F0F0F << 2);
+    int hex55555555 = hex33333333 ^ (hex33333333 << 1);
+    x = (x & hex55555555) + ((x >> 1) & hex55555555);
+    x = (x & hex33333333) + ((x >> 2) & hex33333333);
+    x = (x & hex0F0F0F0F) + ((x >> 4) & hex0F0F0F0F);
+    x = (x & hex00FF00FF) + ((x >> 8) & hex00FF00FF);
+    x = (x & hex0000FFFF) + ((x >> 16) & hex0000FFFF);
+    return x;
 }
 
 /*
@@ -417,7 +451,8 @@ int byteSwap(int x, int n, int m)  // 14 op
     int n_dis = n << 3;
     int m_mask = (x >> m_dis) & 0xFF;
     int n_mask = (x >> n_dis) & 0xFF;
-    // clear mth and nth bytes if m != n (when m == n, x is the answer)
+
+    // Clear mth and nth bytes if m != n (when m == n, x is already the answer)
     x = x ^ (m_mask << m_dis) ^ (n_mask << n_dis);
     return x | (m_mask << n_dis) | (n_mask << m_dis);
 }
@@ -466,11 +501,12 @@ int countLeadingZero(int x)  // 36 op
     num_zero = num_zero + (leading_n_zero & 4);
     x = x << (leading_n_zero & 4);
 
-    // Method above takes 8 ops per iteration,
-    // and the next interation (8 ops) can only get 2-bit information,
-    // and we can get 1-bit information in 3 ops.
-    // Hence, consider the remaining 4 bits seperately will be faster
-
+    /*
+     * Method above takes 8 ops per iteration,
+     * and the next interation (8 ops) can only get 2-bit information,
+     * and we can get 1-bit information in 3 ops.
+     * Hence, consider the remaining 4 bits seperately will be faster.
+     */
     int bit_31_is_zero = !(x >> 31);
     num_zero = num_zero + bit_31_is_zero;
 
@@ -488,17 +524,19 @@ int countLeadingZero(int x)  // 36 op
 
 int countLeadingZero_43(int x)  // 43 op
 {
-    // https://hackmd.io/s/Bk-uxCYxz
-    // int clz(uint32_t x) {
-    //     if (x == 0) return 32;
-    //     int n = 1;
-    //     if ((x >> 16) == 0) { n += 16; x <<= 16; }
-    //     if ((x >> 24) == 0) { n += 8; x <<= 8; }
-    //     if ((x >> 28) == 0) { n += 4; x <<= 4; }
-    //     if ((x >> 30) == 0) { n += 2; x <<= 2; }
-    //     n = n - (x >> 31);
-    //     return n;
-    // }
+    /*
+     * https://hackmd.io/s/Bk-uxCYxz
+     *   int clz(uint32_t x) {
+     *       if (x == 0) return 32;
+     *       int n = 1;
+     *       if ((x >> 16) == 0) { n += 16; x <<= 16; }
+     *       if ((x >> 24) == 0) { n += 8; x <<= 8; }
+     *       if ((x >> 28) == 0) { n += 4; x <<= 4; }
+     *       if ((x >> 30) == 0) { n += 2; x <<= 2; }
+     *       n = n - (x >> 31);
+     *       return n;
+     *   }
+     */
     int num_zero = 0;
 
     // value = 11......11 if the leading 16 bits are all zero else 00......00
@@ -669,7 +707,7 @@ int fitsShort(int x)  // 4 op
  *   Max ops: 10
  *   Rating: 2
  */
-unsigned floatAbsVal(unsigned uf)  // ? op
+unsigned floatAbsVal(unsigned uf)  // 3? op
 {
     unsigned uf_abs = uf & 0x7FFFFFFF;
     return uf_abs > 0x7F800000 ? uf : uf_abs;
@@ -687,7 +725,7 @@ unsigned floatAbsVal(unsigned uf)  // ? op
  *   Max ops: 30
  *   Rating: 4
  */
-int floatFloat2Int(unsigned uf)
+int floatFloat2Int(unsigned uf)  // 21? op
 {
     int is_neg = uf >> 31;
     int exponent = (uf >> 23) & 0xFF;
@@ -702,7 +740,7 @@ int floatFloat2Int(unsigned uf)
     // Can be represented as 32-bit int
     if (exponent >= bias) {
         int power2 = exponent - bias;
-        if (power2 < len_fraction)
+        if (power2 <= len_fraction)
             fraction = fraction >> (len_fraction - power2);
         else
             fraction = fraction << (power2 - len_fraction);
@@ -723,12 +761,13 @@ int floatFloat2Int(unsigned uf)
  *   Max ops: 30
  *   Rating: 4
  */
-unsigned floatInt2Float(int x)
+unsigned floatInt2Float(int x)  // 35? op
 {
+    // See floatFloat2Int()
     if (x == 0)
         return 0;
     int x_sign = x & 0x80000000;
-    int x_abs = x_sign ? -x : x;  // Need to consider Tmin
+    int x_abs = x_sign ? -x : x;  // How about Tmin?
 
     int exponent, fraction;
     int bias = 127;
@@ -737,11 +776,12 @@ unsigned floatInt2Float(int x)
     while (!(x_abs >> power2) && power2 > 0) {
         power2--;
     }
+
     exponent = power2 + bias;
+    fraction = ((1 << power2) - 1) & x_abs;
     if (power2 <= len_fraction) {
-        fraction = (((1 << power2) - 1) & x_abs) << (len_fraction - power2);
+        fraction = fraction << (len_fraction - power2);
     } else {
-        fraction = ((1 << power2) - 1) & x_abs;
         int num_fall_off = power2 - len_fraction;
 
         /*
@@ -754,7 +794,7 @@ unsigned floatInt2Float(int x)
         /*
          * Shift twice to avoid undefined bahavior (<< 32), since:
          *     24 <= power2 <= 31
-         *     1 <= num_fall_off <= 31
+         *     1 <= num_fall_off <= 8
          * We want 'x_abs << (33 - num_fall_off)'
          */
         int S = x_abs << (32 - num_fall_off) << 1;
