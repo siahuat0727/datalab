@@ -1513,11 +1513,11 @@ int isTmax_shift(int x)  // Can't use shift
  *   Max ops: 10
  *   Rating: 1
  */
-int isTmin(int x)  // 8 ops
+int isTmin(int x)  // 7 ops
 {
     // See isTmax()
     int x_minus_1 = x + ~0;
-    return !(~(x ^ x_minus_1) | !~x_minus_1);
+    return !(~(x ^ x_minus_1) | !x);
 }
 
 int isTmin_shift(int x)  // Can't use shift
@@ -1849,7 +1849,19 @@ int sign(int x)  // 3 ops
  *   Max ops: 15
  *   Rating: 4
  */
-int signMag2TwosComp(int x)  // faster, 15 ops
+int signMag2TwosComp(int x)  // 6 ops
+{
+    // See twosComp2SignMag()
+
+    int neg_mask = x >> 31;
+    int x_sign = neg_mask << 31;
+    int x_without_sign = x ^ x_sign;
+
+    int x_twos_comp_if_neg = (x_without_sign ^ neg_mask) + (neg_mask & 1);
+    return x_twos_comp_if_neg;
+}
+
+int signMag2TwosComp_15(int x)  // faster, 15 ops
 {
     int no_sign_bit = x << 1;         // Since !(x << 1) has warning
     x = x & ~(!(no_sign_bit) << 31);  // Convert -0 to +0
@@ -1957,13 +1969,12 @@ int trueFiveEighths(int x)  // 11 op
     // See trueThreeFourths() for the concept
 
     int x_div_8 = x >> 3;
-    int remainder_x_div_8 = x & 0x7;  // The remainder of x/8
+    int remainder = x & 0x7;  // The remainder of x/8
 
     int x_div_8_mul_5 = (x_div_8 << 2) + x_div_8;
 
     int x_is_neg = x >> 31;
-    int carry =
-        ((remainder_x_div_8 << 2) + remainder_x_div_8 + (x_is_neg & 0x7)) >> 3;
+    int carry = ((remainder << 2) + remainder + (x_is_neg & 0x7)) >> 3;
 
     return x_div_8_mul_5 + carry;
 }
@@ -1986,18 +1997,17 @@ int trueThreeFourths(int x)  // 11 op
      * result of 3*(x/4) + 3*remainder.
      *
      * For negative x, since the right shift perform division that rounds
-     * towards nagative infinity, we must add one to it if there is some
+     * towards negative infinity, we must add one to it if there is any
      * remainder after division so that the result is rounding towards 0.
      */
 
     int x_div_4 = x >> 2;
-    int remainder_x_div_4 = x & 0x3;  // The remainder of x/4
+    int remainder = x & 0x3;  // The remainder of x/4
 
     int x_div_4_mul_3 = (x_div_4 << 1) + x_div_4;
 
     int x_is_neg = x >> 31;
-    int carry =
-        ((remainder_x_div_4 << 1) + remainder_x_div_4 + (x_is_neg & 0x3)) >> 2;
+    int carry = ((remainder << 1) + remainder + (x_is_neg & 0x3)) >> 2;
 
     return x_div_4_mul_3 + carry;
 }
@@ -2017,7 +2027,9 @@ int twosComp2SignMag(int x)  // 6 ops
 
     int neg_mask = x >> 31;
     int x_sign = neg_mask << 31;
-    return x_sign | ((x ^ neg_mask) + (neg_mask & 1));
+    int x_abs = (x ^ neg_mask) + (neg_mask & 1);
+
+    return x_sign | x_abs;
 }
 
 /*
@@ -2042,7 +2054,7 @@ int upperBits(int n)  // 7 ops
     return n_is_not_0_mask << ((33 + ~n) & n_is_not_0_mask);
 }
 
-int upperBits_6(int n)  // 6 ops
+int upperBits_undefined_behavior(int n)  // 6 ops
 {
     /* INTEGER CODING RULES:
      * You may assume that your machine:
