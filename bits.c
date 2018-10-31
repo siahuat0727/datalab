@@ -207,7 +207,7 @@ int anyEvenBit(int x)  // 7 ops
     return !!(x & hex55555555);
 }
 
-int anyEvenBit_7(int x)  // 9 ops
+int anyEvenBit_9(int x)  // 9 ops
 {
     x = x | x >> 16;
     x = x | x >> 8;
@@ -289,7 +289,36 @@ int bitAnd(int x, int y)  // 4 ops
  *   Max ops: 40
  *   Rating: 4
  */
-int bitCount(int x)  // 31 ops
+int bitCount(int x)  // 24 ops
+{
+    // See bitCount_30()
+
+    int hex0F0F = (0x0F << 8) | 0x0F;
+    int hex0F0F0F0F = (hex0F0F << 16) | hex0F0F;
+    int hex33333333 = hex0F0F0F0F ^ (hex0F0F0F0F << 2);
+    int hex55555555 = hex33333333 ^ (hex33333333 << 1);
+
+    x = (x & hex55555555) + ((x >> 1) & hex55555555);
+    x = (x & hex33333333) + ((x >> 2) & hex33333333);
+
+    /*
+     * Idea from
+     * http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
+     * Since x is now 4-bit per group and the maximum number of 1 after add up
+     * two group is 8, which is representable in 4-bit, so we can do mask after
+     * add.
+     * Benefits: save 1 op (no need to mask twice)
+     */
+    x = (x + (x >> 4)) & hex0F0F0F0F;
+
+    // Same concept with above but save more ops
+    x = x + (x >> 8);
+    x = (x + (x >> 16)) & 0xFF;
+
+    return x;
+}
+
+int bitCount_30(int x)  // 30 ops
 {
     /*
      * Idea: https://www.viseator.com/2017/06/18/CS_APP_DataLab/
@@ -315,7 +344,7 @@ int bitCount(int x)  // 31 ops
      * add the specific column:         | 00000100|
      * number of bit 1 in each group:   |     4   | <- the total bit 1 in x
      */
-    int hex0000FFFF = (1 << 16) + ~0;
+    int hex0000FFFF = (0xFF << 8) | 0xFF;
     int hex00FF00FF = hex0000FFFF ^ (hex0000FFFF << 8);
     int hex0F0F0F0F = hex00FF00FF ^ (hex00FF00FF << 4);
     int hex33333333 = hex0F0F0F0F ^ (hex0F0F0F0F << 2);
@@ -412,9 +441,9 @@ int bitParity(int x)  // 11 ops
  *   Max ops: 45
  *   Rating: 4
  */
-int bitReverse(int x)  // 11 + 25 = 36 ops
+int bitReverse(int x)  // 10 + 25 = 35 ops
 {
-    int hex0000FFFF = (1 << 16) + ~0;
+    int hex0000FFFF = (0xFF << 8) | 0xFF;
     int hex00FF00FF = hex0000FFFF ^ (hex0000FFFF << 8);
     int hex0F0F0F0F = hex00FF00FF ^ (hex00FF00FF << 4);
     int hex33333333 = hex0F0F0F0F ^ (hex0F0F0F0F << 2);
@@ -614,7 +643,7 @@ int distinctNegation_5_bang(int x)  // 5 ops
 {
     // Goal: Return 1 if x is not 0 (00......00) or tmin (10......00) else 0
 
-    // See bang() (case 2)
+    // See bang() (case 1 and 2)
     return ((x ^ (~x + 1)) >> 31) & 1;
 }
 
@@ -1089,12 +1118,12 @@ int greatestBitPos(int x)  // faster, 41 ops
     return !!x << (32 + ~num_zero);
 }
 
-int greatestBitPos_64(int x)  // 64 ops
+int greatestBitPos_63(int x)  // 63 ops
 {
     // bitReverse() -> leastBitPos() -> bitReverse()
     int ones = ~0;  // All bits are set to 1 or decimal -1
 
-    int hex0000FFFF = (1 << 16) + ones;
+    int hex0000FFFF = (0xFF << 8) | 0xFF;
     int hex00FF00FF = hex0000FFFF ^ (hex0000FFFF << 8);
     int hex0F0F0F0F = hex00FF00FF ^ (hex00FF00FF << 4);
     int hex33333333 = hex0F0F0F0F ^ (hex0F0F0F0F << 2);
@@ -1406,9 +1435,9 @@ int isNotEqual(int x, int y)  // 3 ops
  *   Max ops: 45
  *   Rating: 4
  */
-int isPallindrome(int x)  // faster? 38 ops
+int isPallindrome(int x)  // faster? 37 ops
 {
-    int hex0000FFFF = (1 << 16) + ~0;
+    int hex0000FFFF = (0xFF << 8) | 0xFF;
     int hex00FF00FF = hex0000FFFF ^ (hex0000FFFF << 8);
     int hex0F0F0F0F = hex00FF00FF ^ (hex00FF00FF << 4);
     int hex33333333 = hex0F0F0F0F ^ (hex0F0F0F0F << 2);
@@ -1923,9 +1952,20 @@ int tmin(void)  // 1 ops
  *   Max ops: 25
  *   Rating: 4
  */
-int trueFiveEighths(int x)
+int trueFiveEighths(int x)  // 11 op
 {
-    return 42;
+    // See trueThreeFourths() for the concept
+
+    int x_div_8 = x >> 3;
+    int remainder_x_div_8 = x & 0x7;  // The remainder of x/8
+
+    int x_div_8_mul_5 = (x_div_8 << 2) + x_div_8;
+
+    int x_is_neg = x >> 31;
+    int carry =
+        ((remainder_x_div_8 << 2) + remainder_x_div_8 + (x_is_neg & 0x7)) >> 3;
+
+    return x_div_8_mul_5 + carry;
 }
 
 /*
@@ -1938,9 +1978,28 @@ int trueFiveEighths(int x)
  *   Max ops: 20
  *   Rating: 4
  */
-int trueThreeFourths(int x)
+int trueThreeFourths(int x)  // 11 op
 {
-    return 42;
+    /*
+     * Since we have to avoid errors due to overflow, we can calculate
+     * the result of x/4 with remainder first and then calculate the
+     * result of 3*(x/4) + 3*remainder.
+     *
+     * For negative x, since the right shift perform division that rounds
+     * towards nagative infinity, we must add one to it if there is some
+     * remainder after division so that the result is rounding towards 0.
+     */
+
+    int x_div_4 = x >> 2;
+    int remainder_x_div_4 = x & 0x3;  // The remainder of x/4
+
+    int x_div_4_mul_3 = (x_div_4 << 1) + x_div_4;
+
+    int x_is_neg = x >> 31;
+    int carry =
+        ((remainder_x_div_4 << 1) + remainder_x_div_4 + (x_is_neg & 0x3)) >> 2;
+
+    return x_div_4_mul_3 + carry;
 }
 
 /*
@@ -1972,11 +2031,12 @@ int twosComp2SignMag(int x)  // 6 ops
 int upperBits(int n)  // 7 ops
 {
     /*
-     * For 1 <= n <= 32, the result we want is ~0 << (32 - n).
-     * If n == 0, the return value should be 0.
-     * Since 32 - n equals 32 when n is 0, we mask the shift amount with 0
-     * to avoid shift by 32 which will cause unpredictable behavior.
+     * For 1 <= n <= 32, we can return ~0 << (32 - n).
+     * However, if n is 0, the return value should be 0.
+     * Since 32 - n equals to 32 when n is 0, we can mask the shift amount
+     * with 0x0 to avoid shift by 32 which will cause unpredictable behavior.
      */
+
     // value = 11......11 if n != 0 else 00......00
     int n_is_not_0_mask = !n + ~0;
     return n_is_not_0_mask << ((33 + ~n) & n_is_not_0_mask);
