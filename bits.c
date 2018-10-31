@@ -1171,7 +1171,7 @@ int howManyBits_50(int x)  // 50 ops
 {
     /*
      * Trivial method:
-     * Find 32 - (max(leading zeros, leading ones) - 1)
+     * Goal: Return 32 - (max(leading zeros, leading ones) - 1)
      *
      * return 33 - maximumOfTwo(countLeadingZero(x), countLeadingZero(~x));
      * Done! But this method needs 36 + 37 + 13 + 2 = 88 ops
@@ -1613,7 +1613,7 @@ int maximumOfTwo(int x, int y)  // 13 ops
  */
 int minimumOfTwo(int x, int y)  // 13 ops
 {
-    // see isless() and conditional()
+    // see isLess() and conditional()
     int x_is_less_mask = ((x & ~y) | ~((x ^ y) | (y + ~x))) >> 31;
     return (x_is_less_mask & x) | (~x_is_less_mask & y);
 }
@@ -1968,8 +1968,28 @@ int twosComp2SignMag(int x)  // 9 ops
  *   Max ops: 10
  *   Rating: 1
  */
-int upperBits(int n)  // 6 ops
+int upperBits(int n)  // 7 ops
 {
+    /*
+     * For 1 <= n <= 32, the result we want is ~0 << (32 - n).
+     * If n == 0, the return value should be 0.
+     * Since 32 - n equals 32 when n is 0, we mask the shift amount with 0
+     * to avoid shift by 32 which will cause unpredictable behavior.
+     */
+    // value = 11......11 if n != 0 else 00......00
+    int n_is_not_0_mask = !n + ~0;
+    return n_is_not_0_mask << ((33 + ~n) & n_is_not_0_mask);
+}
+
+int upperBits_6(int n)  // 6 ops
+{
+    /* INTEGER CODING RULES:
+     * You may assume that your machine:
+     * 3. Has unpredictable behavior when shifting if the shift amount
+     *    is less than 0 or greater than 31.
+     */
+
+    // >> -1 is has unpredictable behavior! (when n == 0)
     return (!!n << 31) >> (n + ~0);
 }
 
@@ -1978,9 +1998,4 @@ int upperBits_9(int n)  // 9 ops
     // return n ? (1 << 31) >> (n-1) : 0;
     int n_is_0 = (!n << 31) >> 31;
     return ~n_is_0 & ((1 << 31) >> (n + ~0));
-}
-
-int upperBits_wrong_32(int n)  // Error: when n = 32
-{
-    return ((1 << n) - 1) << (32 - n);
 }
