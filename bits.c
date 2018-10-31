@@ -110,7 +110,7 @@ NOTES:
  *   Max ops: 10
  *   Rating: 4
  */
-int absVal(int x)  // 4 op
+int absVal(int x)  // 4 ops
 {
     int neg_mask = x >> 31;
 
@@ -126,7 +126,7 @@ int absVal(int x)  // 4 op
  *   Max ops: 20
  *   Rating: 3
  */
-int addOK(int x, int y)  // 7 op
+int addOK(int x, int y)  // 7 ops
 {
     // See addOK_9()
 
@@ -134,7 +134,7 @@ int addOK(int x, int y)  // 7 op
     return (((x ^ y) | ~(sum ^ x)) >> 31) & 1;
 }
 
-int addOK_9(int x, int y)  // 9 op
+int addOK_9(int x, int y)  // 9 ops
 {
     int sign_x = x >> 31;
     int sign_y = y >> 31;
@@ -152,14 +152,14 @@ int addOK_9(int x, int y)  // 9 op
  *   Max ops: 12
  *   Rating: 2
  */
-int allEvenBits(int x)  // 7 op
+int allEvenBits(int x)  // 7 ops
 {
     int hex5555 = (0x55 << 8) | 0x55;
     int hex55555555 = (hex5555 << 16) | hex5555;
     return !((x & hex55555555) ^ hex55555555);
 }
 
-int allEvenBits_9(int x)  // 9 op
+int allEvenBits_9(int x)  // 9 ops
 {
     x = x & x >> 16;
     x = x & x >> 8;
@@ -176,14 +176,14 @@ int allEvenBits_9(int x)  // 9 op
  *   Max ops: 12
  *   Rating: 2
  */
-int allOddBits(int x)  // 7 op
+int allOddBits(int x)  // 7 ops
 {
     int hexAAAA = (0xAA << 8) | 0xAA;
     int hexAAAAAAAA = (hexAAAA << 16) | hexAAAA;
     return !((x & hexAAAAAAAA) ^ hexAAAAAAAA);
 }
 
-int allOddBits_10(int x)  // 10 op
+int allOddBits_10(int x)  // 10 ops
 {
     x = x & x >> 16;
     x = x & x >> 8;
@@ -200,14 +200,14 @@ int allOddBits_10(int x)  // 10 op
  *   Max ops: 12
  *   Rating: 2
  */
-int anyEvenBit(int x)  // 7 op
+int anyEvenBit(int x)  // 7 ops
 {
     int hex5555 = (0x55 << 8) | 0x55;
     int hex55555555 = (hex5555 << 16) | hex5555;
     return !!(x & hex55555555);
 }
 
-int anyEvenBit_7(int x)  // 9 op
+int anyEvenBit_7(int x)  // 9 ops
 {
     x = x | x >> 16;
     x = x | x >> 8;
@@ -224,14 +224,14 @@ int anyEvenBit_7(int x)  // 9 op
  *   Max ops: 12
  *   Rating: 2
  */
-int anyOddBit(int x)  // 7 op
+int anyOddBit(int x)  // 7 ops
 {
     int hexAAAA = (0xAA << 8) | 0xAA;
     int hexAAAAAAAA = (hexAAAA << 16) | hexAAAA;
     return !!(x & hexAAAAAAAA);
 }
 
-int anyOddBit_10(int x)  // 10 op
+int anyOddBit_10(int x)  // 10 ops
 {
     x = x | x >> 16;
     x = x | x >> 8;
@@ -247,7 +247,7 @@ int anyOddBit_10(int x)  // 10 op
  *   Max ops: 12
  *   Rating: 4
  */
-int bang(int x)  // 6 op
+int bang(int x)  // 6 ops
 {
     /*
      * Consider sign bit of x and two's complement of x:
@@ -260,7 +260,7 @@ int bang(int x)  // 6 op
     return (((x | x_twos_comp) >> 31) ^ 1) & 1;
 }
 
-int bang_12(int x)  // 12 op
+int bang_12(int x)  // 12 ops
 {
     x = x | x >> 16;
     x = x | x >> 8;
@@ -277,7 +277,7 @@ int bang_12(int x)  // 12 op
  *   Max ops: 8
  *   Rating: 1
  */
-int bitAnd(int x, int y)  // 4 op
+int bitAnd(int x, int y)  // 4 ops
 {
     return ~(~x | ~y);
 }
@@ -289,12 +289,12 @@ int bitAnd(int x, int y)  // 4 op
  *   Max ops: 40
  *   Rating: 4
  */
-int bitCount(int x)  // 31 op
+int bitCount(int x)  // 31 ops
 {
     /*
      * Idea: https://www.viseator.com/2017/06/18/CS_APP_DataLab/
      *
-     * counting parallel and in place
+     * Counting parallel and in place
      *
      * 'x' means ignore the column where '+' means add up the column
      *                                   x + x + x + x + x
@@ -338,7 +338,7 @@ int bitCount(int x)  // 31 op
  *   Max ops: 16
  *   Rating: 3
  */
-int bitMask(int highbit, int lowbit)  // 6 op
+int bitMask(int highbit, int lowbit)  // 6 ops
 {
     // Idea from < aben20807 >:
     // Use '~0 << lowbit' instead of '~((1 << lowbit) + ~0)'
@@ -356,7 +356,7 @@ int bitMask(int highbit, int lowbit)  // 6 op
  *   Max ops: 14
  *   Rating: 1
  */
-int bitMatch(int x, int y)  // 8 op
+int bitMatch(int x, int y)  // 8 ops
 {
     // (x & y) | (~x & ~y) <- Apply De Morgan's law
     return ~(~(x & y) & ~(~x & ~y));
@@ -369,7 +369,7 @@ int bitMatch(int x, int y)  // 8 op
  *   Max ops: 8
  *   Rating: 1
  */
-int bitNor(int x, int y)  // 3 op
+int bitNor(int x, int y)  // 3 ops
 {
     // De Morgan's law
     return ~x & ~y;
@@ -382,7 +382,7 @@ int bitNor(int x, int y)  // 3 op
  *   Max ops: 8
  *   Rating: 1
  */
-int bitOr(int x, int y)  // 4 op
+int bitOr(int x, int y)  // 4 ops
 {
     return ~(~x & ~y);
 }
@@ -394,7 +394,7 @@ int bitOr(int x, int y)  // 4 op
  *   Max ops: 20
  *   Rating: 4
  */
-int bitParity(int x)  // 11 op
+int bitParity(int x)  // 11 ops
 {
     x = x ^ (x >> 16);
     x = x ^ (x >> 8);
@@ -412,7 +412,7 @@ int bitParity(int x)  // 11 op
  *   Max ops: 45
  *   Rating: 4
  */
-int bitReverse(int x)  // 11 + 25 = 36 op
+int bitReverse(int x)  // 11 + 25 = 36 ops
 {
     int hex0000FFFF = (1 << 16) + ~0;
     int hex00FF00FF = hex0000FFFF ^ (hex0000FFFF << 8);
@@ -434,7 +434,7 @@ int bitReverse(int x)  // 11 + 25 = 36 op
  *   Max ops: 14
  *   Rating: 1
  */
-int bitXor(int x, int y)  // 8 op
+int bitXor(int x, int y)  // 8 ops
 {
     // (~x & y) | (x & ~y)  <- Apply De Morgan's law
     return ~(~(~x & y) & ~(x & ~y));
@@ -449,7 +449,7 @@ int bitXor(int x, int y)  // 8 op
  *  Max ops: 25
  *  Rating: 2
  */
-int byteSwap(int x, int n, int m)  // 14 op
+int byteSwap(int x, int n, int m)  // 14 ops
 {
     int m_dis = m << 3;
     int n_dis = n << 3;
@@ -458,6 +458,8 @@ int byteSwap(int x, int n, int m)  // 14 op
 
     // Clear mth and nth bytes if m != n (when m == n, x is already the answer)
     x = x ^ (m_mask << m_dis) ^ (n_mask << n_dis);
+
+    // Set mth and nth bytes that after swap
     return x | (m_mask << n_dis) | (n_mask << m_dis);
 }
 
@@ -468,7 +470,7 @@ int byteSwap(int x, int n, int m)  // 14 op
  *   Max ops: 16
  *   Rating: 3
  */
-int conditional(int x, int y, int z)  // 7 op
+int conditional(int x, int y, int z)  // 7 ops
 {
     int false_mask = (!x << 31) >> 31;
     return (~false_mask & y) | (false_mask & z);
@@ -484,7 +486,7 @@ int conditional(int x, int y, int z)  // 7 op
  *   Rating: 4
  */
 
-int countLeadingZero(int x)  // 36 op
+int countLeadingZero(int x)  // 36 ops
 {
     // See countLeadingZero_43()
 
@@ -526,7 +528,7 @@ int countLeadingZero(int x)  // 36 op
     return num_zero;
 }
 
-int countLeadingZero_43(int x)  // 43 op
+int countLeadingZero_43(int x)  // 43 ops
 {
     /*
      * https://hackmd.io/s/Bk-uxCYxz
@@ -580,7 +582,7 @@ int countLeadingZero_43(int x)  // 43 op
  *   Max ops: 5
  *   Rating: 2
  */
-int copyLSB(int x)  // 2 op
+int copyLSB(int x)  // 2 ops
 {
     return (x << 31) >> 31;
 }
@@ -592,7 +594,7 @@ int copyLSB(int x)  // 2 op
  *   Max ops: 5
  *   Rating: 2
  */
-int distinctNegation(int x)  // 3 op
+int distinctNegation(int x)  // 3 ops
 {
     // Goal: Return 1 if x is not 0 (00......00) or tmin (10......00) else 0
 
@@ -600,7 +602,7 @@ int distinctNegation(int x)  // 3 op
     return !!throw_sign_bit;
 }
 
-int distinctNegation_5(int x)  // 5 op
+int distinctNegation_5(int x)  // 5 ops
 {
     int x_twos_comp = ~x + 1;
 
@@ -608,7 +610,7 @@ int distinctNegation_5(int x)  // 5 op
     return !!(x ^ x_twos_comp);
 }
 
-int distinctNegation_5_bang(int x)  // 5 op
+int distinctNegation_5_bang(int x)  // 5 ops
 {
     // Goal: Return 1 if x is not 0 (00......00) or tmin (10......00) else 0
 
@@ -624,15 +626,14 @@ int distinctNegation_5_bang(int x)  // 5 op
  *   Max ops: 15
  *   Rating: 2
  */
-int dividePower2(int x, int n)  // 7 op
+int dividePower2(int x, int n)  // 7 ops
 {
     /*
-     * 'x >> n' is equal to floor(x/(2^n)), whenever x is positive or negative
+     * x >> n is equal to floor(x/(2^n)), whether x is nonnegative or negative.
      *
      * But we want ceil(x/(2^n)) when x is negative, that is, round toward zero.
-     * And ceil(x/(2^n)) equals to floor((x+(2^n)-1)/(2^n)),
-     * when divisor is integer
-     * So we add (2^n)-1 to x when x is negative
+     * And ceil(x/(2^n)) equals to floor((x+(2^n)-1)/(2^n)) when divisor is
+     * integer. As a result,  we add (2^n)-1 to x when x is negative.
      */
     int neg_mask = x >> 31;
     return (x + (neg_mask & ((1 << n) + ~0))) >> n;
@@ -644,7 +645,7 @@ int dividePower2(int x, int n)  // 7 op
  *   Max ops: 8
  *   Rating: 1
  */
-int evenBits(void)  // 4 op
+int evenBits(void)  // 4 ops
 {
     int hex55 = 0x55;
     int hex5555 = hex55 | (hex55 << 8);
@@ -663,17 +664,18 @@ int evenBits(void)  // 4 op
  *   Rating: 3
  */
 
-int ezThreeFourths(int x)  // 6 op
+int ezThreeFourths(int x)  // 6 ops
 {
+    // See dividePower2()
+
     int x_mul_3 = x + (x << 1);
     int x_mul_3_is_neg = x_mul_3 >> 31;
-    // See dividePower2()
     return (x_mul_3 + (x_mul_3_is_neg & 3)) >> 2;
 }
 
-// ERROR: Test ezThreeFourths(-2147483647[0x80000001]) failed...
+// ERROR: Test ezThreeFourths_wrong(-2147483647[0x80000001]) failed...
 // Gives -536870912[0xe0000000]. Should be -536870911[0xe0000001]
-int ezThreeFourths_wrong_1(int x)
+int ezThreeFourths_wrong(int x)
 {
     return (x + (x << 1)) >> 2;  // Error: Division of negative number
 }
@@ -687,7 +689,7 @@ int ezThreeFourths_wrong_1(int x)
  *   Max ops: 15
  *   Rating: 2
  */
-int fitsBits(int x, int n)  // 6 op
+int fitsBits(int x, int n)  // 6 ops
 {
     int m = 33 + ~n;  // => 32 + (~n + 1) => 32 - n
     int x_as_n_bit = (x << m) >> m;
@@ -702,7 +704,7 @@ int fitsBits(int x, int n)  // 6 op
  *   Max ops: 8
  *   Rating: 1
  */
-int fitsShort(int x)  // 4 op
+int fitsShort(int x)  // 4 ops
 {
     int x_as_16_bit = (x << 16) >> 16;
     return !(x ^ x_as_16_bit);
@@ -719,7 +721,7 @@ int fitsShort(int x)  // 4 op
  *   Max ops: 10
  *   Rating: 2
  */
-unsigned floatAbsVal(unsigned uf)  // 3? op
+unsigned floatAbsVal(unsigned uf)  // 3? ops
 {
     unsigned uf_abs = uf & 0x7FFFFFFF;
     return uf_abs > 0x7F800000 ? uf : uf_abs;
@@ -737,7 +739,7 @@ unsigned floatAbsVal(unsigned uf)  // 3? op
  *   Max ops: 30
  *   Rating: 4
  */
-int floatFloat2Int(unsigned uf)  // 21? op
+int floatFloat2Int(unsigned uf)  // 21? ops
 {
     int is_neg = uf >> 31;
     int exponent = (uf >> 23) & 0xFF;
@@ -773,7 +775,7 @@ int floatFloat2Int(unsigned uf)  // 21? op
  *   Max ops: 30
  *   Rating: 4
  */
-unsigned floatInt2Float(int x)  // 35? op
+unsigned floatInt2Float(int x)  // 35? ops
 {
     // See floatFloat2Int()
     if (x == 0)
@@ -831,7 +833,7 @@ unsigned floatInt2Float(int x)  // 35? op
  *   Max ops: 25
  *   Rating: 2
  */
-int floatIsEqual(unsigned uf, unsigned ug)  // 11? op
+int floatIsEqual(unsigned uf, unsigned ug)  // 11? ops
 {
     // return (uf is not NaN && ug is not NaN && (uf equals to ug || both are
     // zero))
@@ -850,7 +852,7 @@ int floatIsEqual(unsigned uf, unsigned ug)  // 11? op
  *   Max ops: 30
  *   Rating: 3
  */
-int floatIsLess(unsigned uf, unsigned ug)  // 23? op
+int floatIsLess(unsigned uf, unsigned ug)  // 23? ops
 {
     // Check if uf is NaN or ug is NaN or both are zero
     if ((uf & 0x7FFFFFFF) > 0x7F800000 || (ug & 0x7FFFFFFF) > 0x7F800000 ||
@@ -877,7 +879,7 @@ int floatIsLess(unsigned uf, unsigned ug)  // 23? op
  *   Max ops: 10
  *   Rating: 2
  */
-unsigned floatNegate(unsigned uf)  // 5? op
+unsigned floatNegate(unsigned uf)  // 5? ops
 {
     int is_NaN = (uf & 0x7FFFFFFF) > 0x7F800000;
     // Toggle sign bit if uf is not NaN
@@ -898,7 +900,7 @@ unsigned floatNegate(unsigned uf)  // 5? op
  *   Max ops: 30
  *   Rating: 4
  */
-unsigned floatPower2(int x)  // 12? op
+unsigned floatPower2(int x)  // 12? ops
 {
     /*
      * Observe:
@@ -930,7 +932,7 @@ unsigned floatPower2(int x)  // 12? op
  *   Max ops: 30
  *   Rating: 4
  */
-unsigned floatScale1d2(unsigned uf)  // 15? op
+unsigned floatScale1d2(unsigned uf)  // 15? ops
 {
     int sign = uf & 0x80000000;
     int exponent = uf & 0x7F800000;
@@ -956,7 +958,7 @@ unsigned floatScale1d2(unsigned uf)  // 15? op
  *   Max ops: 30
  *   Rating: 4
  */
-unsigned floatScale2(unsigned uf)  // 11? op
+unsigned floatScale2(unsigned uf)  // 11? ops
 {
     int sign = uf & 0x80000000;
     int exponent = uf & 0x7F800000;
@@ -980,7 +982,7 @@ unsigned floatScale2(unsigned uf)  // 11? op
  *   Max ops: 35
  *   Rating: 4
  */
-unsigned floatScale64(unsigned uf)  // 16? op
+unsigned floatScale64(unsigned uf)  // 16? ops
 {
     int sign = uf & 0x80000000;
     int num_loop = 6;
@@ -1011,7 +1013,7 @@ unsigned floatScale64(unsigned uf)  // 16? op
  *   Max ops: 30
  *   Rating: 4
  */
-unsigned floatUnsigned2Float(unsigned u)  // 26? op
+unsigned floatUnsigned2Float(unsigned u)  // 26? ops
 {
     if (u) {
         int len_fraction = 23;
@@ -1048,7 +1050,7 @@ unsigned floatUnsigned2Float(unsigned u)  // 26? op
  *   Max ops: 6
  *   Rating: 2
  */
-int getByte(int x, int n)  // 3 op
+int getByte(int x, int n)  // 3 ops
 {
     return (x >> (n << 3)) & 0xFF;
 }
@@ -1062,7 +1064,7 @@ int getByte(int x, int n)  // 3 op
  *   Rating: 4
  */
 
-int greatestBitPos(int x)  // faster, 41 op
+int greatestBitPos(int x)  // faster, 41 ops
 {
     // See countLeadingZero()
 
@@ -1087,7 +1089,7 @@ int greatestBitPos(int x)  // faster, 41 op
     return !!x << (32 + ~num_zero);
 }
 
-int greatestBitPos_64(int x)  // 64 op
+int greatestBitPos_64(int x)  // 64 ops
 {
     // bitReverse() -> leastBitPos() -> bitReverse()
     int ones = ~0;  // All bits are set to 1 or decimal -1
@@ -1131,10 +1133,82 @@ int greatestBitPos_64(int x)  // 64 op
  *  Max ops: 90
  *  Rating: 4
  */
-int howManyBits(int x)
+int howManyBits(int x)  // 45 ops
 {
-    // Find 32 - (max(leading zeros, leading ones) - 1)
-    return 42;
+    // See howManyBits_50()
+
+    int num_bits_redundant = 0;
+
+    // value = 11......11 if the leading 17 bits are the same else 00......00
+    int leading_n_same = (!((x << 16 >> 16) ^ x)) << 31 >> 31;
+    num_bits_redundant = num_bits_redundant + (leading_n_same & 16);
+    x = x << (leading_n_same & 16);
+
+    // value = 11......11 if the leading 9 bits are the same else 00......00
+    leading_n_same = !((x << 8 >> 8) ^ x) << 31 >> 31;
+    num_bits_redundant = num_bits_redundant + (leading_n_same & 8);
+    x = x << (leading_n_same & 8);
+
+    // value = 11......11 if the leading 5 bits are the same else 00......00
+    leading_n_same = !((x << 4 >> 4) ^ x) << 31 >> 31;
+    num_bits_redundant = num_bits_redundant + (leading_n_same & 4);
+    x = x << (leading_n_same & 4);
+
+    // value = 11......11 if the leading 3 bits are the same else 00......00
+    int leading_3_same = leading_n_same = !((x << 2 >> 2) ^ x);
+    num_bits_redundant = num_bits_redundant + leading_3_same + leading_3_same;
+    x = x << leading_3_same << leading_3_same;
+
+    // value = 11......11 if the leading 2 bits are the same else 00......00
+    int leading_2_same = !((x << 1 >> 1) ^ x);
+    num_bits_redundant = num_bits_redundant + leading_2_same;
+
+    // Return 32 - num_bits_redundant
+    return 33 + ~num_bits_redundant;
+}
+
+int howManyBits_50(int x)  // 50 ops
+{
+    /*
+     * Trivial method:
+     * Find 32 - (max(leading zeros, leading ones) - 1)
+     *
+     * return 33 - maximumOfTwo(countLeadingZero(x), countLeadingZero(~x));
+     * Done! But this method needs 36 + 37 + 13 + 2 = 88 ops
+     *
+     * We can use the same concept of counting leading zero to implement this
+     * function. See countLeadingZero()
+     */
+
+    int num_bits_redundant = 0;
+
+    // value = 11......11 if the leading 17 bits are the same else 00......00
+    int x_as_16_bit = x << 16 >> 16;
+    int leading_n_same = (!(x_as_16_bit ^ x)) << 31 >> 31;
+    num_bits_redundant = num_bits_redundant + (leading_n_same & 16);
+    x = x << (leading_n_same & 16);
+
+    // value = 11......11 if the leading 9 bits are the same else 00......00
+    leading_n_same = !((x << 8 >> 8) ^ x) << 31 >> 31;
+    num_bits_redundant = num_bits_redundant + (leading_n_same & 8);
+    x = x << (leading_n_same & 8);
+
+    // value = 11......11 if the leading 5 bits are the same else 00......00
+    leading_n_same = !((x << 4 >> 4) ^ x) << 31 >> 31;
+    num_bits_redundant = num_bits_redundant + (leading_n_same & 4);
+    x = x << (leading_n_same & 4);
+
+    // value = 11......11 if the leading 3 bits are the same else 00......00
+    leading_n_same = !((x << 2 >> 2) ^ x) << 31 >> 31;
+    num_bits_redundant = num_bits_redundant + (leading_n_same & 2);
+    x = x << (leading_n_same & 2);
+
+    // value = 11......11 if the leading 2 bits are the same else 00......00
+    leading_n_same = !((x << 1 >> 1) ^ x) << 31 >> 31;
+    num_bits_redundant = num_bits_redundant + (leading_n_same & 1);
+
+    // Return 32 - num_bits_redundant
+    return 33 + ~num_bits_redundant;
 }
 
 /*
@@ -1146,7 +1220,7 @@ int howManyBits(int x)
  *   Max ops: 5
  *   Rating: 2
  */
-int implication(int x, int y)  // 2 op
+int implication(int x, int y)  // 2 ops
 {
     return (!x) | y;
 }
@@ -1158,7 +1232,7 @@ int implication(int x, int y)  // 2 op
  *   Max ops: 90
  *   Rating: 4
  */
-int intLog2(int x)  // 38 op
+int intLog2(int x)  // 38 ops
 {
     // See countLeadingZero()
 
@@ -1192,7 +1266,7 @@ int intLog2(int x)  // 38 op
  *   Max ops: 15
  *   Rating: 3
  */
-int isAsciiDigit(int x)  // 8 op
+int isAsciiDigit(int x)  // 8 ops
 {
     // x - 0x30 >= 0 && x - 0x39 <= 0
     // x - 0x30 >= 0 && x - 0x3A < 0 , easier to check if a number is negative
@@ -1207,7 +1281,7 @@ int isAsciiDigit(int x)  // 8 op
  *   Max ops: 5
  *   Rating: 2
  */
-int isEqual(int x, int y)  // 2 op
+int isEqual(int x, int y)  // 2 ops
 {
     return !(x ^ y);
 }
@@ -1219,13 +1293,13 @@ int isEqual(int x, int y)  // 2 op
  *   Max ops: 24
  *   Rating: 3
  */
-int isGreater(int x, int y)  // 10 op
+int isGreater(int x, int y)  // 10 ops
 {
     // See isGreater_12()
     return (((y & ~x) | ~((x ^ y) | (x + ~y))) >> 31) & 1;
 }
 
-int isGreater_12(int x, int y)  // 12 op
+int isGreater_12(int x, int y)  // 12 ops
 {
     // (x is +,0 && y is -) || (x, y have same sign && (x - y) > 0) <- De Morgan
     return ((y >> 31) & !(x >> 31)) | !(((x ^ y) >> 31) | ((x + ~y) >> 31));
@@ -1238,13 +1312,13 @@ int isGreater_12(int x, int y)  // 12 op
  *   Max ops: 24
  *   Rating: 3
  */
-int isLess(int x, int y)  // 10 op
+int isLess(int x, int y)  // 10 ops
 {
     // See isLess_12()
     return (((x & ~y) | ~((x ^ y) | (y + ~x))) >> 31) & 1;
 }
 
-int isLess_12(int x, int y)  // 12 op
+int isLess_12(int x, int y)  // 12 ops
 {
     // (x is - && y is +,0) || (x, y have same sign && (y - x) > 0) <- De Morgan
     return ((x >> 31) & !(y >> 31)) | !(((x ^ y) >> 31) | ((y + ~x) >> 31));
@@ -1257,19 +1331,19 @@ int isLess_12(int x, int y)  // 12 op
  *   Max ops: 24
  *   Rating: 3
  */
-int isLessOrEqual(int x, int y)  // 9 op
+int isLessOrEqual(int x, int y)  // 9 ops
 {
     // See isGreater() + De Morgan's law
     return (((~y | x) & ((x ^ y) | (x + ~y))) >> 31) & 1;
 }
 
-int isLessOrEqual_11(int x, int y)  // 11 op
+int isLessOrEqual_11(int x, int y)  // 11 ops
 {
     // See isLessOrEqual_13()
     return (((x & ~y) | ~((x ^ y) | (y + ~x + 1))) >> 31) & 1;
 }
 
-int isLessOrEqual_13(int x, int y)  // 13 op
+int isLessOrEqual_13(int x, int y)  // 13 ops
 {
     // (x is - && y is +,0) || (x, y have same sign && (y - x) >= 0)
     return ((x >> 31) & !(y >> 31)) | !(((x ^ y) >> 31) | ((y + ~x + 1) >> 31));
@@ -1282,7 +1356,7 @@ int isLessOrEqual_13(int x, int y)  // 13 op
  *   Max ops: 6
  *   Rating: 2
  */
-int isNegative(int x)  // 2 op
+int isNegative(int x)  // 2 ops
 {
     return (x >> 31) & 1;
 }
@@ -1294,7 +1368,7 @@ int isNegative(int x)  // 2 op
  *   Max ops: 6
  *   Rating: 2
  */
-int isNonNegative(int x)  // 2 op
+int isNonNegative(int x)  // 2 ops
 {
     return !(x >> 31);
 }
@@ -1307,7 +1381,7 @@ int isNonNegative(int x)  // 2 op
  *   Max ops: 10
  *   Rating: 4
  */
-int isNonZero(int x)  // 5 op
+int isNonZero(int x)  // 5 ops
 {
     // Sign bit of both zero and two's complement of zero is 0
     return ((x | (~x + 1)) >> 31) & 1;
@@ -1320,7 +1394,7 @@ int isNonZero(int x)  // 5 op
  *   Max ops: 6
  *   Rating: 2
  */
-int isNotEqual(int x, int y)  // 3 op
+int isNotEqual(int x, int y)  // 3 ops
 {
     return !!(x ^ y);
 }
@@ -1332,7 +1406,7 @@ int isNotEqual(int x, int y)  // 3 op
  *   Max ops: 45
  *   Rating: 4
  */
-int isPallindrome(int x)  // faster? 38 op
+int isPallindrome(int x)  // faster? 38 ops
 {
     int hex0000FFFF = (1 << 16) + ~0;
     int hex00FF00FF = hex0000FFFF ^ (hex0000FFFF << 8);
@@ -1354,7 +1428,7 @@ int isPallindrome(int x)  // faster? 38 op
  *   Max ops: 8
  *   Rating: 2
  */
-int isPositive(int x)  // 5 op
+int isPositive(int x)  // 5 ops
 {
     return (!(x >> 31)) & (!!x);  // nonnegative and not zero
 }
@@ -1367,10 +1441,10 @@ int isPositive(int x)  // 5 op
  *   Max ops: 20
  *   Rating: 4
  */
-int isPower2(int x)  // 8 op
+int isPower2(int x)  // 8 ops
 {
     // (x & (x-1)) == 0 && x > 0
-    // !(x & (x + ~0)) & !(x >> 31) & !!x  11 op
+    // !(x & (x + ~0)) & !(x >> 31) & !!x  11 ops
     // Apply De Morgan's law
     return !((x & (x + ~0)) | (x >> 31) | !x);
 }
@@ -1382,14 +1456,14 @@ int isPower2(int x)  // 8 op
  *   Max ops: 10
  *   Rating: 1
  */
-int isTmax(int x)  // 7 op
+int isTmax(int x)  // 7 ops
 {
     // See isTmax_8() + De Morgan's law
     int x_plus_1 = x + 1;
     return !(~(x ^ x_plus_1) | !~x);
 }
 
-int isTmax_8(int x)  // 8 op
+int isTmax_8(int x)  // 8 ops
 {
     // Observe: ~(x ^ (x+1)) equal to 0 only when x is tmax or -1
     int x_plus_1 = x + 1;
@@ -1410,7 +1484,7 @@ int isTmax_shift(int x)  // Can't use shift
  *   Max ops: 10
  *   Rating: 1
  */
-int isTmin(int x)  // 8 op
+int isTmin(int x)  // 8 ops
 {
     // See isTmax()
     int x_minus_1 = x + ~0;
@@ -1430,7 +1504,7 @@ int isTmin_shift(int x)  // Can't use shift
  *   Max ops: 2
  *   Rating: 1
  */
-int isZero(int x)  // 1 op
+int isZero(int x)  // 1 ops
 {
     return !x;
 }
@@ -1443,7 +1517,7 @@ int isZero(int x)  // 1 op
  *   Max ops: 6
  *   Rating: 2
  */
-int leastBitPos(int x)  // 4 op
+int leastBitPos(int x)  // 4 ops
 {
     int x_no_least_bit = x & (x + ~0);
     return x ^ x_no_least_bit;
@@ -1457,7 +1531,7 @@ int leastBitPos(int x)  // 4 op
  *   Max ops: 50
  *   Rating: 4
  */
-int leftBitCount(int x)  // 37 op
+int leftBitCount(int x)  // 37 ops
 {
     // Convert to counting leading zeros, see countLeadingZero()
     x = ~x;
@@ -1489,7 +1563,7 @@ int leftBitCount(int x)  // 37 op
  *   Max ops: 12
  *   Rating: 4
  */
-int logicalNeg(int x)  // 6 op
+int logicalNeg(int x)  // 6 ops
 {
     // See bang()
     int x_twos_comp = ~x + 1;
@@ -1504,13 +1578,13 @@ int logicalNeg(int x)  // 6 op
  *   Max ops: 20
  *   Rating: 3
  */
-int logicalShift(int x, int n)  // 6 op
+int logicalShift(int x, int n)  // 6 ops
 {
     int mask = ~(1 << 31 >> n << 1);
     return (x >> n) & mask;
 }
 
-int logicalShift_9(int x, int n)  // 9 op
+int logicalShift_9(int x, int n)  // 9 ops
 {
     int sign = (x >> 31) & 1;
     // Clear sign bit to 0 and set it after shift
@@ -1524,7 +1598,7 @@ int logicalShift_9(int x, int n)  // 9 op
  *   Max ops: 20
  *   Rating: 4
  */
-int maximumOfTwo(int x, int y)  // 13 op
+int maximumOfTwo(int x, int y)  // 13 ops
 {
     // See isGreater() and conditional()
     int x_is_greater_mask = ((y & ~x) | ~((x ^ y) | (x + ~y))) >> 31;
@@ -1537,7 +1611,7 @@ int maximumOfTwo(int x, int y)  // 13 op
  *   Max ops: 20
  *   Rating: 4
  */
-int minimumOfTwo(int x, int y)  // 13 op
+int minimumOfTwo(int x, int y)  // 13 ops
 {
     // see isless() and conditional()
     int x_is_less_mask = ((x & ~y) | ~((x ^ y) | (y + ~x))) >> 31;
@@ -1550,7 +1624,7 @@ int minimumOfTwo(int x, int y)  // 13 op
  *   Max ops: 2
  *   Rating: 1
  */
-int minusOne(void)  // 1 op
+int minusOne(void)  // 1 ops
 {
     return ~0;
 }
@@ -1566,7 +1640,7 @@ int minusOne(void)  // 1 op
  *   Max ops: 12
  *   Rating: 3
  */
-int multFiveEighths(int x)  // 6 op
+int multFiveEighths(int x)  // 6 ops
 {
     int x_mul_5 = x + (x << 2);
     return (x_mul_5 + ((x_mul_5 >> 31) & 7)) >> 3;
@@ -1579,7 +1653,7 @@ int multFiveEighths(int x)  // 6 op
  *   Max ops: 5
  *   Rating: 2
  */
-int negate(int x)  // 2 op
+int negate(int x)  // 2 ops
 {
     return ~x + 1;
 }
@@ -1590,7 +1664,7 @@ int negate(int x)  // 2 op
  *   Max ops: 8
  *   Rating: 2
  */
-int oddBits(void)  // 4 op
+int oddBits(void)  // 4 ops
 {
     int hexAA = 0xAA;
     int hexAAAA = hexAA | (hexAA << 8);
@@ -1605,7 +1679,7 @@ int oddBits(void)  // 4 op
  *   Max ops: 20
  *   Rating: 3
  */
-int remainderPower2(int x, int n)  // faster, 16 op
+int remainderPower2(int x, int n)  // faster, 16 ops
 {
     int x_sign = x >> 31;
     int x_abs = (x ^ x_sign) + (x_sign & 1);
@@ -1624,7 +1698,7 @@ int remainderPower2(int x, int n)  // faster, 16 op
  *   Max ops: 10
  *   Rating: 3
  */
-int replaceByte(int x, int n, int c)  // 6 op
+int replaceByte(int x, int n, int c)  // 6 ops
 {
     int n_dis = n << 3;
     int clear_mask = 0xFF << n_dis;
@@ -1640,7 +1714,7 @@ int replaceByte(int x, int n, int c)  // 6 op
  *   Max ops: 25
  *   Rating: 3
  */
-int rotateLeft(int x, int n)  // 9 op
+int rotateLeft(int x, int n)  // 9 ops
 {
     int keep_mask = (1 << n) + ~0;                // (1 << n) - 1
     int fall_off = (x >> (33 + ~n)) & keep_mask;  // 33 + ~n => 32 - n
@@ -1655,7 +1729,7 @@ int rotateLeft(int x, int n)  // 9 op
  *   Max ops: 25
  *   Rating: 3
  */
-int rotateRight(int x, int n)  // change neg to pos maybe faster? 12 op
+int rotateRight(int x, int n)  // change neg to pos maybe faster? 12 ops
 {
     int keep_mask = (1 << n) + ~0;
     int shift_dis = 33 + ~n;  // 32 - n
@@ -1674,7 +1748,7 @@ int rotateRight(int x, int n)  // change neg to pos maybe faster? 12 op
  *   Max ops: 30
  *   Rating: 4
  */
-int satAdd(int x, int y)  // 13 op
+int satAdd(int x, int y)  // 13 ops
 {
     int sum = x + y;
     int no_overflow_mask = ((x ^ y) | ~(sum ^ x)) >> 31;
@@ -1694,7 +1768,7 @@ int satAdd(int x, int y)  // 13 op
  *   Max ops: 20
  *   Rating: 3
  */
-int satMul2(int x)  // 10 op
+int satMul2(int x)  // 10 ops
 {
     int x_mul_2 = x << 1;
     int overflow_mask = (x_mul_2 ^ x) >> 31;
@@ -1715,7 +1789,7 @@ int satMul2(int x)  // 10 op
  *   Max ops: 25
  *   Rating: 3
  */
-int satMul3(int x)  // 14 op
+int satMul3(int x)  // 14 ops
 {
     int x_mul_2 = x << 1;
     int x_mul_3 = x_mul_2 + x;
@@ -1733,7 +1807,7 @@ int satMul3(int x)  // 14 op
  *   Max ops: 10
  *   Rating: 2
  */
-int sign(int x)  // 3 op
+int sign(int x)  // 3 ops
 {
     return (x >> 31) | !!x;
 }
@@ -1746,7 +1820,7 @@ int sign(int x)  // 3 op
  *   Max ops: 15
  *   Rating: 4
  */
-int signMag2TwosComp(int x)  // faster, 15 op
+int signMag2TwosComp(int x)  // faster, 15 ops
 {
     int no_sign_bit = x << 1;         // Since !(x << 1) has warning
     x = x & ~(!(no_sign_bit) << 31);  // Convert -0 to +0
@@ -1761,7 +1835,7 @@ int signMag2TwosComp(int x)  // faster, 15 op
  *   Max ops: 3
  *   Rating: 1
  */
-int specialBits(void)  // 2 op
+int specialBits(void)  // 2 ops
 {
     return ~(0xD7 << 14);
 }
@@ -1774,12 +1848,16 @@ int specialBits(void)  // 2 op
  *   Max ops: 20
  *   Rating: 3
  */
-int subtractionOK(int x, int y)  // 13 op
+int subtractionOK(int x, int y)  // 13 ops
 {
     /*
-     * Reuse addOK(x, -y). However, since -Tmin equals to Tmin,
+     * Reuse addOK(x, -y). However, since -Tmin equals to Tmin in c,
      * the result of subtraction(x, Tmin) and addOK(x, -Tmin)
      * should be the opposite.
+     *
+     * For example, if addOK(x, Tmin) returns ok, then addOK(x, -Tmin) is
+     * equals to addOK(x, Tmin) and will return ok with the result
+     * x + Tmin, but the value we want to represent is x - Tmin.
      */
 
     // See addOK()
@@ -1801,14 +1879,14 @@ int subtractionOK(int x, int y)  // 13 op
  *   Max ops: 8
  *   Rating: 1
  */
-int thirdBits(void)  // 4 op
+int thirdBits(void)  // 4 ops
 {
     // 0x49249249
     int hex9249 = (0x92 << 8) | 0x49;
     return (hex9249 << 15) | hex9249;
 }
 
-int thirdBits_6(void)  // 6 op
+int thirdBits_6(void)  // 6 ops
 {
     return (0x49 << 24) | (0x24 << 16) | (0x92 << 8) | 0x49;
 }
@@ -1819,7 +1897,7 @@ int thirdBits_6(void)  // 6 op
  *   Max ops: 4
  *   Rating: 1
  */
-int tmax(void)  // 2 op
+int tmax(void)  // 2 ops
 {
     return ~(1 << 31);
 }
@@ -1830,7 +1908,7 @@ int tmax(void)  // 2 op
  *   Max ops: 4
  *   Rating: 1
  */
-int tmin(void)  // 1 op
+int tmin(void)  // 1 ops
 {
     return 1 << 31;
 }
@@ -1874,7 +1952,7 @@ int trueThreeFourths(int x)
  *   Max ops: 15
  *   Rating: 4
  */
-int twosComp2SignMag(int x)  // 9 op
+int twosComp2SignMag(int x)  // 9 ops
 {
     int neg_mask = x >> 31;
     int neg_sign = 1 << 31;
@@ -1890,12 +1968,12 @@ int twosComp2SignMag(int x)  // 9 op
  *   Max ops: 10
  *   Rating: 1
  */
-int upperBits(int n)  // 6 op
+int upperBits(int n)  // 6 ops
 {
     return (!!n << 31) >> (n + ~0);
 }
 
-int upperBits_9(int n)  // 9 op
+int upperBits_9(int n)  // 9 ops
 {
     // return n ? (1 << 31) >> (n-1) : 0;
     int n_is_0 = (!n << 31) >> 31;
