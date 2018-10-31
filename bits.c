@@ -1952,12 +1952,13 @@ int trueThreeFourths(int x)
  *   Max ops: 15
  *   Rating: 4
  */
-int twosComp2SignMag(int x)  // 9 ops
+int twosComp2SignMag(int x)  // 6 ops
 {
+    // See absVal()
+
     int neg_mask = x >> 31;
-    int neg_sign = 1 << 31;
-    int x_twos_comp = ~x + 1;
-    return (neg_mask & (x_twos_comp | neg_sign)) | (~neg_mask & x);
+    int x_sign = neg_mask << 31;
+    return x_sign | ((x ^ neg_mask) + (neg_mask & 1));
 }
 
 /*
