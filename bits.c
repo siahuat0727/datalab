@@ -1134,7 +1134,7 @@ int greatestBitPos_64(int x)  // 64 op
 int howManyBits(int x)
 {
     // Find 32 - (max(leading zeros, leading ones) - 1)
-    return 0;
+    return 42;
 }
 
 /*
@@ -1158,9 +1158,28 @@ int implication(int x, int y)  // 2 op
  *   Max ops: 90
  *   Rating: 4
  */
-int intLog2(int x)
+int intLog2(int x)  // 38 op
 {
-    return 42;
+    // See countLeadingZero()
+
+    int num_zero = 0;
+
+    int leading_n_zero = !(x >> 16) << 31 >> 31;
+    num_zero = num_zero + (leading_n_zero & 16);
+    x = x << (leading_n_zero & 16);
+
+    leading_n_zero = !(x >> 24) << 31 >> 31;
+    num_zero = num_zero + (leading_n_zero & 8);
+    x = x << (leading_n_zero & 8);
+
+    leading_n_zero = !(x >> 28) << 31 >> 31;
+    num_zero = num_zero + (leading_n_zero & 4);
+    x = x << (leading_n_zero & 4);
+
+    num_zero = num_zero + !(x >> 31) + !(x >> 30) + !(x >> 29) + !(x >> 28);
+
+    // Return 31 - num_zero
+    return 32 + ~num_zero;
 }
 
 /*
@@ -1380,7 +1399,7 @@ int isTmax_8(int x)  // 8 op
 
 int isTmax_shift(int x)  // Can't use shift
 {
-    int tmax = ~(1 << 31);
+    int tmax = (0 << 31);
     return !(x ^ tmax);
 }
 
