@@ -113,7 +113,8 @@ NOTES:
 int absVal(int x)  // 4 op
 {
     int neg_mask = x >> 31;
-    // Return x if x is not negative else ones' complement plus 1
+
+    // Return x if x is nonnegative else ones' complement + 1 (two's complement)
     return (x ^ neg_mask) + (neg_mask & 1);
 }
 
@@ -127,6 +128,8 @@ int absVal(int x)  // 4 op
  */
 int addOK(int x, int y)  // 7 op
 {
+    // See addOK_9()
+
     int sum = x + y;
     return (((x ^ y) | ~(sum ^ x)) >> 31) & 1;
 }
@@ -136,6 +139,7 @@ int addOK_9(int x, int y)  // 9 op
     int sign_x = x >> 31;
     int sign_y = y >> 31;
     int sign_sum = (x + y) >> 31;
+
     // Check if sign of x and y are distinct or sign of sum and x are same
     return ((sign_x ^ sign_y) | ~(sign_sum ^ sign_x)) & 1;
 }
@@ -590,19 +594,24 @@ int copyLSB(int x)  // 2 op
  */
 int distinctNegation(int x)  // 3 op
 {
-    // return 1 if x is not 0 (00......00) or tmin (10......00)
+    // Goal: Return 1 if x is not 0 (00......00) or tmin (10......00) else 0
+
     int throw_sign_bit = x << 1;  // Since !(x << 1) will get warning
     return !!throw_sign_bit;
 }
 
 int distinctNegation_5(int x)  // 5 op
 {
-    // Check if same with x's two's complement
-    return !!(x ^ (~x + 1));
+    int x_twos_comp = ~x + 1;
+
+    // Check if x is not same with x's two's complement
+    return !!(x ^ x_twos_comp);
 }
 
 int distinctNegation_5_bang(int x)  // 5 op
 {
+    // Goal: Return 1 if x is not 0 (00......00) or tmin (10......00) else 0
+
     // See bang() (case 2)
     return ((x ^ (~x + 1)) >> 31) & 1;
 }
@@ -617,11 +626,14 @@ int distinctNegation_5_bang(int x)  // 5 op
  */
 int dividePower2(int x, int n)  // 7 op
 {
-    // 'x >> n' is equal to floor(x/(2^n)), whenever x is positive or negative
-    // But we want ceil(x/(2^n)) when x is negative, that is, round toward zero
-    // And ceil(x/(2^n)) equals to floor((x+(2^n)-1)/(2^n)),
-    // when divisor is integer
-    // So we add (2^n)-1 to x when x is negative
+    /*
+     * 'x >> n' is equal to floor(x/(2^n)), whenever x is positive or negative
+     *
+     * But we want ceil(x/(2^n)) when x is negative, that is, round toward zero.
+     * And ceil(x/(2^n)) equals to floor((x+(2^n)-1)/(2^n)),
+     * when divisor is integer
+     * So we add (2^n)-1 to x when x is negative
+     */
     int neg_mask = x >> 31;
     return (x + (neg_mask & ((1 << n) + ~0))) >> n;
 }
@@ -1106,7 +1118,8 @@ int greatestBitPos_64(int x)  // 64 op
     return x;
 }
 
-/* howManyBits - return the minimum number of bits required to represent x in
+/*
+ * howManyBits - return the minimum number of bits required to represent x in
  *               two's complement
  *  Examples: howManyBits(12) = 5
  *            howManyBits(298) = 10
@@ -1324,7 +1337,7 @@ int isPallindrome(int x)  // faster? 38 op
  */
 int isPositive(int x)  // 5 op
 {
-    return (!(x >> 31)) & (!!x);  // not negative and not zero
+    return (!(x >> 31)) & (!!x);  // nonnegative and not zero
 }
 
 /*
@@ -1742,12 +1755,24 @@ int specialBits(void)  // 2 op
  *   Max ops: 20
  *   Rating: 3
  */
-int subtractionOK(int x, int y)
+int subtractionOK(int x, int y)  // 13 op
 {
-    // int y_neg = ~y + 1;
-    // int sum = x + y_neg;
-    // return (((x ^ y) | ~(sum ^ x)) >> 31) & 1;
-    return 42;
+    /*
+     * Reuse addOK(x, -y). However, since -Tmin equals to Tmin,
+     * the result of subtraction(x, Tmin) and addOK(x, -Tmin)
+     * should be the opposite.
+     */
+
+    // See addOK()
+    int y_neg = ~y + 1;
+    int sum = x + y_neg;
+    int x_add_y_neg_is_OK = (((x ^ y_neg) | ~(sum ^ x)) >> 31) & 1;
+
+    int tmin = 1 << 31;
+    int y_is_Tmin = !(y ^ tmin);
+
+    // Toggle the result if y is Tmin
+    return x_add_y_neg_is_OK ^ y_is_Tmin;
 }
 
 /*
