@@ -126,7 +126,23 @@ int absVal(int x)  // 4 ops
  *   Max ops: 20
  *   Rating: 3
  */
-int addOK(int x, int y)  // 7 ops
+int addOK(int x, int y)  // 6 op
+{
+    /*
+     * Observe:
+     * Return 0 (overflow) when (+,0) + (+,0) => (-) or (-) + (-) => (+,0),
+     * that is, sign of x and y are same and sign of x and sum are different
+     * Since we can compute whether two signs are different FASTER, convert
+     * the observation to sign of x and sum are different and sign of y and
+     * sum are different.
+     *
+     * See addOK_7()
+     */
+    int sum = x + y;
+    return !(((x ^ sum) & (y ^ sum)) >> 31);
+}
+
+int addOK_7(int x, int y)
 {
     // See addOK_9()
 
@@ -140,7 +156,7 @@ int addOK_9(int x, int y)  // 9 ops
     int sign_y = y >> 31;
     int sign_sum = (x + y) >> 31;
 
-    // Check if sign of x and y are distinct or sign of sum and x are same
+    // Check if sign of x and y are different or sign of sum and x are same
     return ((sign_x ^ sign_y) | ~(sign_sum ^ sign_x)) & 1;
 }
 
@@ -1341,14 +1357,10 @@ int isGreater_12(int x, int y)  // 12 ops
  */
 int isLess(int x, int y)  // 10 ops
 {
-    // See isLess_12()
-    return (((x & ~y) | ~((x ^ y) | (y + ~x))) >> 31) & 1;
-}
+    // See isGreater()
 
-int isLess_12(int x, int y)  // 12 ops
-{
-    // (x is - && y is +,0) || (x, y have same sign && (y - x) > 0) <- De Morgan
-    return ((x >> 31) & !(y >> 31)) | !(((x ^ y) >> 31) | ((y + ~x) >> 31));
+    // Return isGreater(y, x)
+    return (((x & ~y) | ~((x ^ y) | (y + ~x))) >> 31) & 1;
 }
 
 /*
@@ -1361,6 +1373,8 @@ int isLess_12(int x, int y)  // 12 ops
 int isLessOrEqual(int x, int y)  // 9 ops
 {
     // See isGreater() + De Morgan's law
+
+    // Return !isGreater(x, y)
     return (((~y | x) & ((x ^ y) | (x + ~y))) >> 31) & 1;
 }
 
@@ -1910,7 +1924,22 @@ int specialBits(void)  // 2 ops
  *   Max ops: 20
  *   Rating: 3
  */
-int subtractionOK(int x, int y)  // 13 ops
+int subtractionOK(int x, int y)  // 8 ops
+{
+    /*
+     * Observe:
+     * Return 0 (overflow) when (+,0) - (-) => (-) or (-) - (+,0) => (+,0),
+     * that is, sign of x and y are different and sign of x and result are
+     * different.
+     *
+     * See addOK_7()
+     */
+
+    int diff = x + ~y + 1;
+    return !(((x ^ y) & (x ^ diff)) >> 31);
+}
+
+int subtractionOK_13(int x, int y)  // 13 ops
 {
     /*
      * Reuse addOK(x, -y). However, since -Tmin equals to Tmin in c,
@@ -1922,9 +1951,10 @@ int subtractionOK(int x, int y)  // 13 ops
      * x + Tmin, but the value we want to represent is x - Tmin.
      */
 
-    // See addOK()
     int y_neg = ~y + 1;
     int sum = x + y_neg;
+
+    // See addOK()
     int x_add_y_neg_is_OK = (((x ^ y_neg) | ~(sum ^ x)) >> 31) & 1;
 
     int tmin = 1 << 31;
