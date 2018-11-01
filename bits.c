@@ -972,7 +972,7 @@ unsigned floatNegate(unsigned uf)  // 5? ops
 {
     int is_NaN = (uf & 0x7FFFFFFF) > 0x7F800000;
     // Toggle sign bit if uf is not NaN
-    return is_NaN ? uf : uf ^ (1 << 31);
+    return is_NaN ? uf : uf ^ 0x80000000;
 }
 
 /*
@@ -1021,7 +1021,7 @@ unsigned floatPower2(int x)  // 12? ops
  *   Max ops: 30
  *   Rating: 4
  */
-unsigned floatScale1d2(unsigned uf)  // 15? ops
+unsigned floatScale1d2(unsigned uf)  // 12? ops
 {
     int sign = uf & 0x80000000;
     int exponent = uf & 0x7F800000;
@@ -1031,7 +1031,7 @@ unsigned floatScale1d2(unsigned uf)  // 15? ops
         int uf_abs = uf ^ sign;
         uf = sign | (uf_abs >> 1);
     } else if (exponent < 0x7F800000) {
-        uf = (uf & 0x807FFFFF) | (exponent - 0x800000);
+        uf = uf - 0x800000;
     }
     return uf;
 }
@@ -1047,7 +1047,7 @@ unsigned floatScale1d2(unsigned uf)  // 15? ops
  *   Max ops: 30
  *   Rating: 4
  */
-unsigned floatScale2(unsigned uf)  // 11? ops
+unsigned floatScale2(unsigned uf)  // 8? ops
 {
     int sign = uf & 0x80000000;
     int exponent = uf & 0x7F800000;
@@ -1055,7 +1055,7 @@ unsigned floatScale2(unsigned uf)  // 11? ops
     if (exponent_is_zero) {
         uf = sign | (uf << 1);
     } else if (exponent != 0x7F800000) {
-        uf = (uf & 0x807FFFFF) | (exponent + 0x800000);
+        uf = uf + 0x800000;
     }
     return uf;
 }
@@ -1071,7 +1071,7 @@ unsigned floatScale2(unsigned uf)  // 11? ops
  *   Max ops: 35
  *   Rating: 4
  */
-unsigned floatScale64(unsigned uf)  // 16? ops
+unsigned floatScale64(unsigned uf)  // 15? ops
 {
     int sign = uf & 0x80000000;
     int num_loop = 6;
@@ -1081,13 +1081,12 @@ unsigned floatScale64(unsigned uf)  // 16? ops
         if (exponent_is_zero) {
             uf = sign | (uf << 1);
         } else if (exponent != 0x7F800000) {
-            exponent = exponent + 0x800000;
+            uf = uf + 0x800000;
+            exponent = uf & 0x7F800000;
             // Check if grater than INF
-            if (exponent == 0x7F800000)
-                // Set to +- INF
-                uf = sign | exponent;
-            else
-                uf = (uf & 0x807FFFFF) | exponent;
+            if (exponent == 0x7F800000) {
+                uf = uf & 0xFF800000;  // clear fraction
+            }
         }
     }
     return uf;
