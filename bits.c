@@ -1,4 +1,3 @@
-#include <stdio.h>  // TODO delete
 /*
  * Modified CS:APP Data Lab
  *
@@ -263,7 +262,7 @@ int anyOddBit_10(int x)  // 10 ops
  *   Max ops: 12
  *   Rating: 4
  */
-int bang(int x)  // 6 ops
+int bang(int x)  // 5 ops
 {
     /*
      * Consider sign bit of x and two's complement of x:
@@ -273,7 +272,7 @@ int bang(int x)  // 6 ops
      */
 
     int x_twos_comp = ~x + 1;
-    return (((x | x_twos_comp) >> 31) ^ 1) & 1;
+    return ((x | x_twos_comp) >> 31) + 1;
 }
 
 int bang_12(int x)  // 12 ops
@@ -1368,7 +1367,7 @@ int isEqual(int x, int y)  // 2 ops
  */
 int isGreater(int x, int y)  // 10 ops
 {
-    // See isGreater_12()
+    // Speed up from isGreater_12()
     return (((y & ~x) | ~((x ^ y) | (x + ~y))) >> 31) & 1;
 }
 
