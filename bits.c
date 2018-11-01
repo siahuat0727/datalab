@@ -441,14 +441,14 @@ int bitParity(int x)  // 11 ops
  *   Max ops: 45
  *   Rating: 4
  */
-int bitReverse(int x)  // 10 + 25 = 35 ops
+int bitReverse(int x)  // 10 + 24 = 34 ops
 {
     int hex0000FFFF = (0xFF << 8) | 0xFF;
     int hex00FF00FF = hex0000FFFF ^ (hex0000FFFF << 8);
     int hex0F0F0F0F = hex00FF00FF ^ (hex00FF00FF << 4);
     int hex33333333 = hex0F0F0F0F ^ (hex0F0F0F0F << 2);
     int hex55555555 = hex33333333 ^ (hex33333333 << 1);
-    x = (x & hex0000FFFF) << 16 | ((x >> 16) & hex0000FFFF);
+    x = x << 16 | ((x >> 16) & hex0000FFFF);
     x = (x & hex00FF00FF) << 8 | ((x >> 8) & hex00FF00FF);
     x = (x & hex0F0F0F0F) << 4 | ((x >> 4) & hex0F0F0F0F);
     x = (x & hex33333333) << 2 | ((x >> 2) & hex33333333);
@@ -538,7 +538,7 @@ int countLeadingZero(int x)  // 36 ops
 
     /*
      * Method above takes 8 ops per iteration,
-     * and the next interation (8 ops) can only get 2-bit information,
+     * but the next interation (8 ops) can only get 2-bit information,
      * and we can get 1-bit information in 3 ops.
      * Hence, consider the remaining 4 bits seperately will be faster.
      */
@@ -1093,7 +1093,7 @@ int getByte(int x, int n)  // 3 ops
  *   Rating: 4
  */
 
-int greatestBitPos(int x)  // faster, 41 ops
+int greatestBitPos(int x)  // 41 ops
 {
     // See countLeadingZero()
 
@@ -1118,10 +1118,9 @@ int greatestBitPos(int x)  // faster, 41 ops
     return !!x << (32 + ~num_zero);
 }
 
-int greatestBitPos_63(int x)  // 63 ops
+int greatestBitPos_61(int x)  // 61 ops
 {
     // bitReverse() -> leastBitPos() -> bitReverse()
-    int ones = ~0;  // All bits are set to 1 or decimal -1
 
     int hex0000FFFF = (0xFF << 8) | 0xFF;
     int hex00FF00FF = hex0000FFFF ^ (hex0000FFFF << 8);
@@ -1129,7 +1128,7 @@ int greatestBitPos_63(int x)  // 63 ops
     int hex33333333 = hex0F0F0F0F ^ (hex0F0F0F0F << 2);
     int hex55555555 = hex33333333 ^ (hex33333333 << 1);
 
-    int reverse = (x & hex0000FFFF) << 16 | ((x >> 16) & hex0000FFFF);
+    int reverse = x << 16 | ((x >> 16) & hex0000FFFF);
     reverse = (reverse & hex00FF00FF) << 8 | ((reverse >> 8) & hex00FF00FF);
     reverse = (reverse & hex0F0F0F0F) << 4 | ((reverse >> 4) & hex0F0F0F0F);
     reverse = (reverse & hex33333333) << 2 | ((reverse >> 2) & hex33333333);
@@ -1137,10 +1136,9 @@ int greatestBitPos_63(int x)  // 63 ops
 
     // x & (x - 1) clear the least bit
     // x ^ (x & (x - 1)) get the least bit
-    int rev_no_least = reverse ^ (reverse & (reverse + ones));
+    int rev_no_least = reverse ^ (reverse & (reverse + ~0));
 
-    x = (rev_no_least & hex0000FFFF) << 16 |
-        ((rev_no_least >> 16) & hex0000FFFF);
+    x = rev_no_least << 16 | ((rev_no_least >> 16) & hex0000FFFF);
     x = (x & hex00FF00FF) << 8 | ((x >> 8) & hex00FF00FF);
     x = (x & hex0F0F0F0F) << 4 | ((x >> 4) & hex0F0F0F0F);
     x = (x & hex33333333) << 2 | ((x >> 2) & hex33333333);
@@ -1412,7 +1410,7 @@ int isNonNegative(int x)  // 2 ops
  */
 int isNonZero(int x)  // 5 ops
 {
-    // Sign bit of both zero and two's complement of zero is 0
+    // Sign bit of both zero and two's complement of zero is 0, see Bang()
     return ((x | (~x + 1)) >> 31) & 1;
 }
 
@@ -1435,14 +1433,16 @@ int isNotEqual(int x, int y)  // 3 ops
  *   Max ops: 45
  *   Rating: 4
  */
-int isPallindrome(int x)  // faster? 37 ops
+int isPallindrome(int x)  // faster? 36 ops
 {
+    // See bitReverse()
+
     int hex0000FFFF = (0xFF << 8) | 0xFF;
     int hex00FF00FF = hex0000FFFF ^ (hex0000FFFF << 8);
     int hex0F0F0F0F = hex00FF00FF ^ (hex00FF00FF << 4);
     int hex33333333 = hex0F0F0F0F ^ (hex0F0F0F0F << 2);
     int hex55555555 = hex33333333 ^ (hex33333333 << 1);
-    int reverse = (x & hex0000FFFF) << 16 | ((x >> 16) & hex0000FFFF);
+    int reverse = x << 16 | ((x >> 16) & hex0000FFFF);
     reverse = (reverse & hex00FF00FF) << 8 | ((reverse >> 8) & hex00FF00FF);
     reverse = (reverse & hex0F0F0F0F) << 4 | ((reverse >> 4) & hex0F0F0F0F);
     reverse = (reverse & hex33333333) << 2 | ((reverse >> 2) & hex33333333);
@@ -1695,8 +1695,7 @@ int negate(int x)  // 2 ops
  */
 int oddBits(void)  // 4 ops
 {
-    int hexAA = 0xAA;
-    int hexAAAA = hexAA | (hexAA << 8);
+    int hexAAAA = 0xAA | (0xAA << 8);
     return hexAAAA | (hexAAAA << 16);
 }
 
@@ -1708,13 +1707,35 @@ int oddBits(void)  // 4 ops
  *   Max ops: 20
  *   Rating: 3
  */
-int remainderPower2(int x, int n)  // faster, 16 ops
+int remainderPower2(int x, int n)  // 10 ops
+{
+    /*
+     * Observe:
+     * For nonnegative x, return x & (2^n - 1)
+     * For negative x and remainder is not 0,
+     * return x & (2^n - 1) with upper 32 - n bits set to 1
+     */
+
+    int ones = ~0;  // All bits are set to 1 or decimal -1
+
+    int remainder_mask = (1 << n) + ones;
+    int remainder = x & remainder_mask;
+
+    int sign_mask = x >> 31 << n;
+    int remainder_is_not_0_mask = !remainder + ones;
+
+    return (sign_mask & remainder_is_not_0_mask) | remainder;
+}
+
+int remainderPower2_16(int x, int n)  // faster, 16 ops
 {
     int x_sign = x >> 31;
     int x_abs = (x ^ x_sign) + (x_sign & 1);
     int remainder_mask = (1 << n) + ~0;
     int remainder_abs = x_abs & remainder_mask;
     int remainder_sign = (x & (!!remainder_abs << 31)) >> 31;
+
+    // Return remainder_abs two's complement if remainder should be negative
     return (remainder_abs ^ remainder_sign) + (remainder_sign & 1);
 }
 
