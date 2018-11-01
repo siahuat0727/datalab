@@ -131,20 +131,20 @@ int addOK(int x, int y)  // 6 op
     /*
      * Observe:
      * Return 0 (overflow) when (+,0) + (+,0) => (-) or (-) + (-) => (+,0),
-     * that is, sign of x and y are same and sign of x and sum are different
-     * Since we can compute whether two signs are different FASTER, convert
-     * the observation to sign of x and sum are different and sign of y and
-     * sum are different.
+     * that is, sign of x and y are same and sign of x (or y) and sum are
+     * different. Since we can compute whether two signs are DIFFERENT faster,
+     * convert the observation to sign of x and sum are DIFFERENT and sign of y
+     * and sum are DIFFERENT.
      *
-     * See addOK_7()
+     * See also addOK_7()
      */
     int sum = x + y;
     return !(((x ^ sum) & (y ^ sum)) >> 31);
 }
 
-int addOK_7(int x, int y)
+int addOK_7(int x, int y)  // 7 op
 {
-    // See addOK_9()
+    // See addOK_9(), reduce ops by delaying getting sign
 
     int sum = x + y;
     return (((x ^ y) | ~(sum ^ x)) >> 31) & 1;
@@ -156,7 +156,7 @@ int addOK_9(int x, int y)  // 9 ops
     int sign_y = y >> 31;
     int sign_sum = (x + y) >> 31;
 
-    // Check if sign of x and y are different or sign of sum and x are same
+    // return 1 if sign of x and y are different or sign of sum and x are same
     return ((sign_x ^ sign_y) | ~(sign_sum ^ sign_x)) & 1;
 }
 
@@ -651,7 +651,7 @@ int distinctNegation_5(int x)  // 5 ops
 {
     int x_twos_comp = ~x + 1;
 
-    // Check if x is not same with x's two's complement
+    // Check if x is different with two's complement of x
     return !!(x ^ x_twos_comp);
 }
 
@@ -679,6 +679,8 @@ int dividePower2(int x, int n)  // 7 ops
      * But we want ceil(x/(2^n)) when x is negative, that is, round toward zero.
      * And ceil(x/(2^n)) equals to floor((x+(2^n)-1)/(2^n)) when divisor is
      * integer. As a result,  we add (2^n)-1 to x when x is negative.
+     *
+     * See also trueThreeFourths() for the details when x is negative
      */
     int neg_mask = x >> 31;
     return (x + (neg_mask & ((1 << n) + ~0))) >> n;
@@ -1471,7 +1473,12 @@ int isPallindrome(int x)  // faster? 36 ops
  *   Max ops: 8
  *   Rating: 2
  */
-int isPositive(int x)  // 5 ops
+int isPositive(int x)  // 4 ops
+{
+    return !(x >> 31 | !x);  // isPositive_5() + De Morgan's law
+}
+
+int isPositive_5(int x)  // 5 ops
 {
     return (!(x >> 31)) & (!!x);  // nonnegative and not zero
 }
@@ -1508,7 +1515,7 @@ int isTmax(int x)  // 7 ops
 
 int isTmax_8(int x)  // 8 ops
 {
-    // Observe: ~(x ^ (x+1)) equal to 0 only when x is tmax or -1
+    // Observe: ~(x ^ (x+1)) only equal to 0 when x is tmax or -1
     int x_plus_1 = x + 1;
     // ~(x ^ (x+1)) equal to 0 && x is not -1
     return !~(x ^ x_plus_1) & !!~x;
@@ -1932,7 +1939,7 @@ int subtractionOK(int x, int y)  // 8 ops
      * that is, sign of x and y are different and sign of x and result are
      * different.
      *
-     * See addOK_7()
+     * See addOK()
      */
 
     int diff = x + ~y + 1;
@@ -2025,7 +2032,8 @@ int trueFiveEighths(int x)  // 11 op
     int x_div_8_mul_5 = (x_div_8 << 2) + x_div_8;
 
     int x_is_neg = x >> 31;
-    int carry = ((remainder << 2) + remainder + (x_is_neg & 0x7)) >> 3;
+    int remainder_mul_5 = (remainder << 2) + remainder;
+    int carry = (remainder_mul_5 + (x_is_neg & 0x7)) >> 3;
 
     return x_div_8_mul_5 + carry;
 }
@@ -2058,7 +2066,8 @@ int trueThreeFourths(int x)  // 11 op
     int x_div_4_mul_3 = (x_div_4 << 1) + x_div_4;
 
     int x_is_neg = x >> 31;
-    int carry = ((remainder << 1) + remainder + (x_is_neg & 0x3)) >> 2;
+    int remainder_mul_3 = (remainder << 1) + remainder;
+    int carry = (remainder_mul_3 + (x_is_neg & 0x3)) >> 2;
 
     return x_div_4_mul_3 + carry;
 }
@@ -2094,10 +2103,12 @@ int twosComp2SignMag(int x)  // 6 ops
 int upperBits(int n)  // 7 ops
 {
     /*
-     * For 1 <= n <= 32, we can return ~0 << (32 - n).
-     * However, if n is 0, the return value should be 0.
-     * Since 32 - n equals to 32 when n is 0, we can mask the shift amount
-     * with 0x0 to avoid shift by 32 which will cause unpredictable behavior.
+     * If directly return ~0 << (32 - n), the result is only correct when
+     * 1 <= n <= 32.
+     * However, if n is 0, the return value should be 0 and we will compute
+     * ~0 << (32 - 0), that is, ~0 << 32 which behavior is undefined.
+     * Therefore, we can mask the shift amount with 0x0 if n is 0 to avoid
+     * this undefined behavior.
      */
 
     // value = 11......11 if n != 0 else 00......00
