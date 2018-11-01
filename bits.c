@@ -530,8 +530,50 @@ int conditional(int x, int y, int z)  // 7 ops
  *   Max ops: 50
  *   Rating: 4
  */
+int countLeadingZero(int x)  // 25 ops
+{
+    /*
+     * Speed up from countLeadingZero_36()
+     * Idea: ilog2() https://www.viseator.com/2017/06/18/CS_APP_DataLab/,
+     * No need to use leading_n_zero as a mask!
+     */
 
-int countLeadingZero(int x)  // 36 ops
+    int num_zero = 0;
+
+    // value = 1 if the leading 16 bits are all zero else 0
+    int leading_n_zero = !(x >> 16);
+    int n = leading_n_zero << 4;  // n = 16 if leading_n_zero is true
+    num_zero = n;
+    x = x << n;
+
+    // value = 1 if the leading 8 bits are all zero else 0
+    leading_n_zero = !(x >> 24);
+    n = leading_n_zero << 3;
+    num_zero = num_zero + n;
+    x = x << n;
+
+    // value = 1 if the leading 4 bits are all zero else 0
+    leading_n_zero = !(x >> 28);
+    n = leading_n_zero << 2;
+    num_zero = num_zero + n;
+    x = x << n;
+
+    // value = 1 if the leading 2 bits are all zero else 0
+    leading_n_zero = !(x >> 30);
+    n = leading_n_zero << 1;
+    num_zero = num_zero + n;
+    x = x << n;
+
+    int bit_31_is_zero = !(x >> 31);
+    num_zero = num_zero + bit_31_is_zero;
+
+    int bit_31_to_30_is_zero = !(x >> 30);
+    num_zero = num_zero + bit_31_to_30_is_zero;
+
+    return num_zero;
+}
+
+int countLeadingZero_36(int x)  // 36 ops
 {
     // See countLeadingZero_43()
 
@@ -1111,26 +1153,34 @@ int getByte(int x, int n)  // 3 ops
  *   Rating: 4
  */
 
-int greatestBitPos(int x)  // 41 ops
+int greatestBitPos(int x)  // 30 ops
 {
     // See countLeadingZero()
 
     int t = x;
     int num_zero = 0;
 
-    int leading_n_zero = !(t >> 16) << 31 >> 31;
-    num_zero = num_zero + (leading_n_zero & 16);
-    t = t << (leading_n_zero & 16);
+    int leading_n_zero = !(t >> 16);
+    int n = leading_n_zero << 4;
+    num_zero = n;
+    t = t << n;
 
-    leading_n_zero = !(t >> 24) << 31 >> 31;
-    num_zero = num_zero + (leading_n_zero & 8);
-    t = t << (leading_n_zero & 8);
+    leading_n_zero = !(t >> 24);
+    n = leading_n_zero << 3;
+    num_zero = num_zero + n;
+    t = t << n;
 
-    leading_n_zero = !(t >> 28) << 31 >> 31;
-    num_zero = num_zero + (leading_n_zero & 4);
-    t = t << (leading_n_zero & 4);
+    leading_n_zero = !(t >> 28);
+    n = leading_n_zero << 2;
+    num_zero = num_zero + n;
+    t = t << n;
 
-    num_zero = num_zero + !(t >> 31) + !(t >> 30) + !(t >> 29) + !(t >> 28);
+    leading_n_zero = !(t >> 30);
+    n = leading_n_zero << 1;
+    num_zero = num_zero + n;
+    t = t << n;
+
+    num_zero = num_zero + !(t >> 31) + !(t >> 30);
 
     // if (x != 0) return 1 << (31 - n) else return 0
     return !!x << (32 + ~num_zero);
@@ -1178,48 +1228,14 @@ int greatestBitPos_61(int x)  // 61 ops
  *  Max ops: 90
  *  Rating: 4
  */
-int howManyBits(int x)  // 45 ops
-{
-    // See howManyBits_50()
-
-    int num_bits_redundant = 0;
-
-    // value = 11......11 if the leading 17 bits are the same else 00......00
-    int leading_n_same = (!((x << 16 >> 16) ^ x)) << 31 >> 31;
-    num_bits_redundant = num_bits_redundant + (leading_n_same & 16);
-    x = x << (leading_n_same & 16);
-
-    // value = 11......11 if the leading 9 bits are the same else 00......00
-    leading_n_same = !((x << 8 >> 8) ^ x) << 31 >> 31;
-    num_bits_redundant = num_bits_redundant + (leading_n_same & 8);
-    x = x << (leading_n_same & 8);
-
-    // value = 11......11 if the leading 5 bits are the same else 00......00
-    leading_n_same = !((x << 4 >> 4) ^ x) << 31 >> 31;
-    num_bits_redundant = num_bits_redundant + (leading_n_same & 4);
-    x = x << (leading_n_same & 4);
-
-    // value = 11......11 if the leading 3 bits are the same else 00......00
-    int leading_3_same = leading_n_same = !((x << 2 >> 2) ^ x);
-    num_bits_redundant = num_bits_redundant + leading_3_same + leading_3_same;
-    x = x << leading_3_same << leading_3_same;
-
-    // value = 11......11 if the leading 2 bits are the same else 00......00
-    int leading_2_same = !((x << 1 >> 1) ^ x);
-    num_bits_redundant = num_bits_redundant + leading_2_same;
-
-    // Return 32 - num_bits_redundant
-    return 33 + ~num_bits_redundant;
-}
-
-int howManyBits_50(int x)  // 50 ops
+int howManyBits(int x)  // 34 ops
 {
     /*
      * Trivial method:
      * Goal: Return 32 - (max(leading zeros, leading ones) - 1)
      *
      * return 33 - maximumOfTwo(countLeadingZero(x), countLeadingZero(~x));
-     * Done! But this method needs 36 + 37 + 13 + 2 = 88 ops
+     * Done! But this method needs 25 + 26 + 13 + 2 = 66 ops
      *
      * We can use the same concept of counting leading zero to implement this
      * function. See countLeadingZero()
@@ -1229,28 +1245,32 @@ int howManyBits_50(int x)  // 50 ops
 
     // value = 11......11 if the leading 17 bits are the same else 00......00
     int x_as_16_bit = x << 16 >> 16;
-    int leading_n_same = (!(x_as_16_bit ^ x)) << 31 >> 31;
-    num_bits_redundant = num_bits_redundant + (leading_n_same & 16);
-    x = x << (leading_n_same & 16);
+    int leading_n_same = !(x_as_16_bit ^ x);
+    int n = leading_n_same << 4;
+    num_bits_redundant = num_bits_redundant + n;
+    x = x << n;
 
     // value = 11......11 if the leading 9 bits are the same else 00......00
-    leading_n_same = !((x << 8 >> 8) ^ x) << 31 >> 31;
-    num_bits_redundant = num_bits_redundant + (leading_n_same & 8);
-    x = x << (leading_n_same & 8);
+    leading_n_same = !((x << 8 >> 8) ^ x);
+    n = leading_n_same << 3;
+    num_bits_redundant = num_bits_redundant + n;
+    x = x << n;
 
     // value = 11......11 if the leading 5 bits are the same else 00......00
-    leading_n_same = !((x << 4 >> 4) ^ x) << 31 >> 31;
-    num_bits_redundant = num_bits_redundant + (leading_n_same & 4);
-    x = x << (leading_n_same & 4);
+    leading_n_same = !((x << 4 >> 4) ^ x);
+    n = leading_n_same << 2;
+    num_bits_redundant = num_bits_redundant + n;
+    x = x << n;
 
     // value = 11......11 if the leading 3 bits are the same else 00......00
-    leading_n_same = !((x << 2 >> 2) ^ x) << 31 >> 31;
-    num_bits_redundant = num_bits_redundant + (leading_n_same & 2);
-    x = x << (leading_n_same & 2);
+    leading_n_same = !((x << 2 >> 2) ^ x);
+    n = leading_n_same << 1;
+    num_bits_redundant = num_bits_redundant + n;
+    x = x << n;
 
     // value = 11......11 if the leading 2 bits are the same else 00......00
-    leading_n_same = !((x << 1 >> 1) ^ x) << 31 >> 31;
-    num_bits_redundant = num_bits_redundant + (leading_n_same & 1);
+    leading_n_same = !((x << 1 >> 1) ^ x);
+    num_bits_redundant = num_bits_redundant + leading_n_same;
 
     // Return 32 - num_bits_redundant
     return 33 + ~num_bits_redundant;
@@ -1277,25 +1297,34 @@ int implication(int x, int y)  // 2 ops
  *   Max ops: 90
  *   Rating: 4
  */
-int intLog2(int x)  // 38 ops
+int intLog2(int x)  // 24 ops
 {
     // See countLeadingZero()
 
     int num_zero = 0;
 
-    int leading_n_zero = !(x >> 16) << 31 >> 31;
-    num_zero = num_zero + (leading_n_zero & 16);
-    x = x << (leading_n_zero & 16);
+    int leading_n_zero = !(x >> 16);
+    int n = leading_n_zero << 4;  // n = 16 if leading_n_zero is true
+    num_zero = n;
+    x = x << n;
 
-    leading_n_zero = !(x >> 24) << 31 >> 31;
-    num_zero = num_zero + (leading_n_zero & 8);
-    x = x << (leading_n_zero & 8);
+    leading_n_zero = !(x >> 24);
+    n = leading_n_zero << 3;
+    num_zero = num_zero + n;
+    x = x << n;
 
-    leading_n_zero = !(x >> 28) << 31 >> 31;
-    num_zero = num_zero + (leading_n_zero & 4);
-    x = x << (leading_n_zero & 4);
+    leading_n_zero = !(x >> 28);
+    n = leading_n_zero << 2;
+    num_zero = num_zero + n;
+    x = x << n;
 
-    num_zero = num_zero + !(x >> 31) + !(x >> 30) + !(x >> 29) + !(x >> 28);
+    leading_n_zero = !(x >> 30);
+    n = leading_n_zero << 1;
+    num_zero = num_zero + n;
+    x = x << n;
+
+    // Since x > 0, no need to check if bit 31 and bit 30 are both 0
+    num_zero = num_zero + !(x >> 31);
 
     // Return 31 - num_zero
     return 32 + ~num_zero;
@@ -1581,26 +1610,34 @@ int leastBitPos(int x)  // 4 ops
  *   Max ops: 50
  *   Rating: 4
  */
-int leftBitCount(int x)  // 37 ops
+int leftBitCount(int x)  // 26 ops
 {
     // Convert to counting leading zeros, see countLeadingZero()
     x = ~x;
 
     int num_zero = 0;
 
-    int leading_n_zero = !(x >> 16) << 31 >> 31;
-    num_zero = num_zero + (leading_n_zero & 16);
-    x = x << (leading_n_zero & 16);
+    int leading_n_zero = !(x >> 16);
+    int n = leading_n_zero << 4;
+    num_zero = n;
+    x = x << n;
 
-    leading_n_zero = !(x >> 24) << 31 >> 31;
-    num_zero = num_zero + (leading_n_zero & 8);
-    x = x << (leading_n_zero & 8);
+    leading_n_zero = !(x >> 24);
+    n = leading_n_zero << 3;
+    num_zero = num_zero + n;
+    x = x << n;
 
-    leading_n_zero = !(x >> 28) << 31 >> 31;
-    num_zero = num_zero + (leading_n_zero & 4);
-    x = x << (leading_n_zero & 4);
+    leading_n_zero = !(x >> 28);
+    n = leading_n_zero << 2;
+    num_zero = num_zero + n;
+    x = x << n;
 
-    num_zero = num_zero + !(x >> 31) + !(x >> 30) + !(x >> 29) + !(x >> 28);
+    leading_n_zero = !(x >> 30);
+    n = leading_n_zero << 1;
+    num_zero = num_zero + n;
+    x = x << n;
+
+    num_zero = num_zero + !(x >> 31) + !(x >> 30);
 
     return num_zero;
 }
